@@ -43,7 +43,9 @@ class CMA_ES:
             self.best_solution = population[0]
             self.best_score = scores[0]
     
-    def optimize(self, iterations=100, stop_condition=None):
+    def optimize(self, iterations=100, stop_condition=None, seed=None):
+        if seed:
+            np.random.seed(seed)
         """Runs the optimization."""
         for i in range(iterations):
             # Sample population
@@ -61,6 +63,8 @@ class CMA_ES:
                 if self.best_score <= stop_condition:
                     print('Stopping condition achieved.')
                     break
+
+            # self.func(self.best_solution, tries=1, show=True)
             
         return self.best_solution, self.best_score
 

@@ -1,64 +1,116 @@
+import numpy as np
 import torch 
 import torch.nn as nn
 from torchsummary import summary
 
 class StaticNN(nn.Module):
 
-    def __init__(self, input_size, output_size, hidden_size = 10, hidden_layers = 2) -> None:
+    def __init__(self, input_size, output_size, hidden_sizes = [128, 64]) -> None:
         super(StaticNN, self).__init__()
 
-        self.hidden = []
-        self.hidden.append(nn.Linear(input_size, hidden_size, bias=False))
-        for i in range(1, hidden_layers):
-            self.hidden.append(nn.Linear(hidden_size, hidden_size, bias=False))
-        self.hidden.append(nn.Linear(hidden_size, output_size, bias=False))
-        self.sigmoid = nn.Sigmoid()
-        self.relu = nn.ReLU()
+        self.layers = []
+        self.layer_sizes = [input_size] + hidden_sizes + [output_size]
+        for i in range(len(self.layer_sizes)-1):
+            self.layers.append(nn.Linear(self.layer_sizes[i], self.layer_sizes[i+1]))
+
+        self.activation = nn.Tanh()
         self.ABCD = torch.Tensor(input_size, output_size, 5)
 
     def forward(self, x):
-        for h in self.hidden[:-1]:
-            x = h(x)
-            x = self.relu(x)
-        # y = self.hidden[-1](x)
-
-
-        # correlation = self.layer.weight * self.ABCD[:,:,1]
-        # pre = self.layer.weight * self.ABCD[:,:,2]
-        # post = self.layer.weight * self.ABCD[:,:,3]
-
-        # self.layer.weight += self.ABCD[:,:,0] * (correlation + pre + post + self.ABCD[:,:,4])
-
-        return self.hidden[-1](x)
+        for layer in self.layers[:-1]:
+            x = layer(x)
+            x = self.activation(x)
+        return self.layers[-1](x)
     
     def get_layer_n_weights(self, layer):
         return layer.weight.shape[0] * layer.weight.shape[1]
 
-    
     def get_n_weights(self):
         n_weights = 0
-        for h in self.hidden:
-            n_weights += self.get_layer_n_weights(h)
+        for layer in self.layers:
+            n_weights += self.get_layer_n_weights(layer)
         return n_weights
 
     def update_weights(self, weights):
         a = 0
-        for i, h in enumerate(self.hidden):
-            b = a + self.get_layer_n_weights(h)
-            w = torch.reshape(weights[a:b], (h.weight.shape))
-            self.hidden[i].weight = nn.Parameter(w)
+        for i, layer in enumerate(self.layers):
+            b = a + self.get_layer_n_weights(layer)
+            w = torch.reshape(weights[a:b], (layer.weight.shape))
+            self.layers[i].weight = nn.Parameter(w)
             a = b
 
     def print_weights(self):
-        for i, h in enumerate(self.hidden):
+        for i, layer in enumerate(self.layers):
             print(f'Layer {i}')
-            print(h.weight)
+            print(layer.weight)
 
 class HebbianAbcdNN(StaticNN):
 
-    def __init__(self, input_size, output_size, hidden_size = 10, hidden_layers = 2) -> None:
-        super(HebbianAbcdNN, self).__init__(input_size, output_size, hidden_size, hidden_layers)
+    def __init__(self, input_size, output_size, hidden_sizes, env_name) -> None:
+        super(HebbianAbcdNN, self).__init__(input_size, output_size, hidden_sizes)
+        self.hebbian_coeff = [torch.ones((layer.weight.shape[0], layer.weight.shape[1], 5)) for layer in self.layers]
+        self.env_name = env_name
 
+    def update_hebbian(self, params):
+        a = 0
+        for i, layer in enumerate(self.layers):
+            b = a + self.get_layer_n_weights(layer) * 5
+            self.hebbian_coeff[i] = torch.reshape(params[a:b], ((layer.weight.shape[0], layer.weight.shape[1], 5)))
+            a = b
+
+    def get_weights(self):
+        weights = torch.ones((self.get_n_weights()))
+        a = 0
+        for i, layer in enumerate(self.layers):
+            b = a + self.get_layer_n_weights(layer)
+            weights[a:b] = torch.flatten(layer.weight)
+            a = b
+        return weights
+
+    def apply_hebbian_rules(self, states):        
+        delta_weights = [layer.weight for layer in self.layers]
+        # print('Layers')
+        # for i, layer in enumerate(self.layers):
+        #     print(f'Layer {i}, {layer.weight.shape}')
+        # print('States')
+        # for i, state in enumerate(states):
+        #     print(f'State {i}, {state.shape}')
+        # print('Coeff')
+        # for i, coeff in enumerate(self.hebbian_coeff):
+        #     print(f'Coeff {i}, {coeff.shape}')
+        for i, layer in enumerate(self.layers):
+            # print('layer', i, layer.weight.shape)
+            for j, row in enumerate(layer.weight):
+                # print('row', j, row.shape)
+                for k, column in enumerate(row):
+                    # print('column', k, column.shape)
+                    delta_weights[i][j, k] = self.hebbian_coeff[i][j, k, 0] * (
+                        self.hebbian_coeff[i][j, k, 1] * states[i][k] * states[i+1][j] + 
+                        self.hebbian_coeff[i][j, k, 2] * states[i][k] +
+                        self.hebbian_coeff[i][j, k, 3] * states[i+1][j] +
+                        self.hebbian_coeff[i][j, k, 4])
+            self.layers[i].weight += delta_weights[i]
+        
+
+
+
+    def forward(self, x):
+        states = [x]
+        for layer in self.layers[:-1]:
+            x = layer(x)
+            x = self.activation(x)
+            states.append(x)
+        y = self.layers[-1](x)
+
+        if self.env_name == 'CartPole-v1':
+            states.append(torch.sigmoid(y))
+        elif self.env_name == 'MountainCar-v0':
+            states.append(nn.functional.hardtanh(y, 0, 2))
+        elif self.env_name == 'LunarLander-v3':
+            states.append(nn.functional.hardtanh(y, 0, 3))
+        self.apply_hebbian_rules(states)
+
+        return y
 
 
 
