@@ -23,14 +23,15 @@ ENVIRONMENTS.append('MountainCar-v0')
 ENVIRONMENTS.append('LunarLander-v3')
 
 # Neural Network parameters
-HIDDEN_SIZES = [128, 64]
+# HIDDEN_SIZES = [128, 64]
+HIDDEN_SIZES = [128]
 
 # Optimisation parameters
 MAX_EPISODE_STEPS = 1000
 TRIES = 3
 SIGMA = 0.5
-POPULATION_SIZE = 50
-ITERATIONS = 100
+POPULATION_SIZE = 100
+ITERATIONS = 1000
 
 # Evaluation parameters
 EVAL_TRIES = 3
@@ -40,7 +41,7 @@ ENV = ENVIRONMENTS[ENV_NUMBER]
 if ENV == 'CartPole-v1':
     STOP_CONDITION = -MAX_EPISODE_STEPS * TRIES
 elif ENV == 'MountainCar-v0':
-    STOP_CONDITION = 50 * TRIES
+    STOP_CONDITION = 115 * TRIES
 elif ENV == 'LunarLander-v3':
     STOP_CONDITION = -200 * TRIES
 
@@ -60,10 +61,10 @@ def compute_action(env_name, action):
     
 def get_model():
     if MODEL == 'static':
-        model = StaticNN(input_size=env.observation_space.shape[0], output_size=1, hidden_sizes=[128, 64])
+        model = StaticNN(input_size=env.observation_space.shape[0], output_size=1, hidden_sizes=HIDDEN_SIZES)
         n_variables = model.get_n_weights()
     elif MODEL == 'abcd':
-        model =  HebbianAbcdNN(input_size=env.observation_space.shape[0], output_size=1, hidden_sizes=[64], env_name=ENV)
+        model =  HebbianAbcdNN(input_size=env.observation_space.shape[0], output_size=1, hidden_sizes=HIDDEN_SIZES, env_name=ENV)
         n_variables = model.get_n_weights() * 5
     else:
         raise ValueError('Model not found.')
