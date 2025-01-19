@@ -1,14 +1,18 @@
 import numpy as np
 import torch 
+import torch.nn as nn
 import gymnasium as gym
+import pickle
+import datetime
 
 from Algorithms.hebbian_learning import StaticNN, HebbianAbcdNN
 from Algorithms.cma_es import CMA_ES
 
 SEED = None
+STORE_DATA = True
 
 # Model options
-MODEL_NUMBER = 1
+MODEL_NUMBER = 0
 MODELS = []
 MODELS.append('static')
 MODELS.append('abcd')
@@ -16,15 +20,15 @@ MODELS.append('abcd')
 MODEL = MODELS[MODEL_NUMBER]
 
 # Environment options
-ENV_NUMBER = 1
+ENV_NUMBER = 2
 ENVIRONMENTS = []
 ENVIRONMENTS.append('CartPole-v1')
 ENVIRONMENTS.append('MountainCar-v0')
 ENVIRONMENTS.append('LunarLander-v3')
 
 # Neural Network parameters
-# HIDDEN_SIZES = [128, 64]
-HIDDEN_SIZES = [128]
+HIDDEN_SIZES = [128, 64]
+# HIDDEN_SIZES = [128]
 
 # Optimisation parameters
 MAX_EPISODE_STEPS = 1000
@@ -51,13 +55,15 @@ def compute_action(env_name, action):
         action =  torch.sigmoid(action)
         return int(torch.round(action))
     elif env_name == 'MountainCar-v0':
-        action = torch.relu(action)
-        action = int(torch.round(action))
-        return min(2, action)
+        # action = torch.relu(action)
+        # action = int(torch.round(action))
+        # return min(2, action)
+        return int(nn.functional.hardtanh(action, 0, 2))
     elif env_name == 'LunarLander-v3':
-        action = torch.relu(action)
-        action = int(torch.round(action))
-        return min(3, action)
+        # action = torch.relu(action)
+        # action = int(torch.round(action))
+        # return min(3, action)
+        return int(nn.functional.hardtanh(action, 0, 2))
     
 def get_model():
     if MODEL == 'static':
@@ -112,17 +118,37 @@ if __name__ == "__main__":
         torch.cuda.manual_seed(SEED)
         np.random.seed(SEED)
 
+
     env = gym.make(ENV, render_mode="human", max_episode_steps=MAX_EPISODE_STEPS)
     model, n_variables = get_model()
-    print(f'n_variables = {n_variables}, Layers = {len(model.layers)}')
+    print(f'MODEL = {MODEL}, ENVIRONMENT = {ENV}')
+    print(f'hidden = {HIDDEN_SIZES}, n_variables = {n_variables}, Layers = {len(model.layers)}')
 
     # Instantiate the CMA-ES optimizer
     optimizer = CMA_ES(func=objective_function, dim=n_variables, sigma=SIGMA, popsize=POPULATION_SIZE)
 
     # Run optimization
     best_solution, best_score = optimizer.optimize(iterations=ITERATIONS, stop_condition=STOP_CONDITION, seed=SEED)
+
+    # with open('output_1.pkl', 'rb') as file:
+    #     data = pickle.load(file)
+    # best_solution = data['best_solution']
+    # best_score = data['best_score']
+    
     print("Best solution:", best_solution)
     print("Best score:", best_score)
+
+    # Store experiment data
+    if STORE_DATA:
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        output_filename = f'output_{ENV}_{MODEL}_{timestamp}.pkl'
+        output = {'best_solution': best_solution,
+                'best_score': best_score,
+                'hidden_size': HIDDEN_SIZES,
+                'population_size': POPULATION_SIZE,
+                'iterations': ITERATIONS}
+        with open(output_filename, 'wb') as file:
+            pickle.dump(output, file)
 
     # Show best solution
     total_reward = objective_function(best_solution, tries = EVAL_TRIES, show=True)
