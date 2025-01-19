@@ -7,7 +7,7 @@ class CMA_ES:
         self.sigma = sigma  # Initial step size
         self.popsize = popsize  # Population size
         self.mean = np.zeros(dim)  # Initial mean
-        self.cov = np.eye(dim)  # Initial covariance matrix
+        self.cov = np.eye(dim, dtype=np.float32)  # Initial covariance matrix
         self.best_solution = None
         self.best_score = float("inf")
     
