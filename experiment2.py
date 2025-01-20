@@ -10,6 +10,7 @@ from Algorithms.cma_es import CMA_ES
 
 SEED = None
 STORE_DATA = True
+READ_DATA = False
 
 # Model options
 MODEL_NUMBER = 0
@@ -20,7 +21,7 @@ MODELS.append('abcd')
 MODEL = MODELS[MODEL_NUMBER]
 
 # Environment options
-ENV_NUMBER = 2
+ENV_NUMBER = 0
 ENVIRONMENTS = []
 ENVIRONMENTS.append('CartPole-v1')
 ENVIRONMENTS.append('MountainCar-v0')
@@ -32,7 +33,7 @@ HIDDEN_SIZES = [128, 64]
 
 # Optimisation parameters
 MAX_EPISODE_STEPS = 1000
-TRIES = 3
+TRIES = 5
 SIGMA = 0.5
 POPULATION_SIZE = 100
 ITERATIONS = 1000
@@ -127,19 +128,21 @@ if __name__ == "__main__":
     # Instantiate the CMA-ES optimizer
     optimizer = CMA_ES(func=objective_function, dim=n_variables, sigma=SIGMA, popsize=POPULATION_SIZE)
 
-    # Run optimization
-    best_solution, best_score = optimizer.optimize(iterations=ITERATIONS, stop_condition=STOP_CONDITION, seed=SEED)
+    if READ_DATA:
+        with open('output_LunarLander-v3_static_2025-01-20_16-36-53.pkl', 'rb') as file:
+            data = pickle.load(file)
+        best_solution = data['best_solution']
+        best_score = data['best_score']
+    else:
+        # Run optimization
+        best_solution, best_score = optimizer.optimize(iterations=ITERATIONS, stop_condition=STOP_CONDITION, seed=SEED)
 
-    # with open('output_1.pkl', 'rb') as file:
-    #     data = pickle.load(file)
-    # best_solution = data['best_solution']
-    # best_score = data['best_score']
     
     print("Best solution:", best_solution)
     print("Best score:", best_score)
 
     # Store experiment data
-    if STORE_DATA:
+    if STORE_DATA and not READ_DATA:
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         output_filename = f'output_{ENV}_{MODEL}_{timestamp}.pkl'
         output = {'best_solution': best_solution,
