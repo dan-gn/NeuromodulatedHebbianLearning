@@ -5,12 +5,13 @@ import gymnasium as gym
 import pickle
 import datetime
 
-from Algorithms.hebbian_learning import StaticNN, HebbianAbcdNN
-from Algorithms.cma_es import CMA_ES
+from Models.static_neural_network import StaticNN
+from Models.hebbian_learning import HebbianAbcdNN
+from Optimisation.cma_es import CMA_ES
 
 SEED = None
-STORE_DATA = True
 READ_DATA = False
+STORE_DATA = True
 
 # Model options
 MODEL_NUMBER = 0
@@ -21,7 +22,7 @@ MODELS.append('abcd')
 MODEL = MODELS[MODEL_NUMBER]
 
 # Environment options
-ENV_NUMBER = 0
+ENV_NUMBER = 2
 ENVIRONMENTS = []
 ENVIRONMENTS.append('CartPole-v1')
 ENVIRONMENTS.append('MountainCar-v0')
@@ -33,7 +34,7 @@ HIDDEN_SIZES = [128, 64]
 
 # Optimisation parameters
 MAX_EPISODE_STEPS = 1000
-TRIES = 5
+TRIES = 10
 SIGMA = 0.5
 POPULATION_SIZE = 100
 ITERATIONS = 1000
@@ -129,7 +130,8 @@ if __name__ == "__main__":
     optimizer = CMA_ES(func=objective_function, dim=n_variables, sigma=SIGMA, popsize=POPULATION_SIZE)
 
     if READ_DATA:
-        with open('output_LunarLander-v3_static_2025-01-20_16-36-53.pkl', 'rb') as file:
+        input_filename = 'output_cartpole-v1_static_2025-01-21_15-00-44.pkl'
+        with open(f'Results/{input_filename}', 'rb') as file:
             data = pickle.load(file)
         best_solution = data['best_solution']
         best_score = data['best_score']
@@ -144,7 +146,7 @@ if __name__ == "__main__":
     # Store experiment data
     if STORE_DATA and not READ_DATA:
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        output_filename = f'output_{ENV}_{MODEL}_{timestamp}.pkl'
+        output_filename = f'Results/output_{ENV}_{MODEL}_{timestamp}.pkl'
         output = {'best_solution': best_solution,
                 'best_score': best_score,
                 'hidden_size': HIDDEN_SIZES,
