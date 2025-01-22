@@ -5,6 +5,9 @@ import gymnasium as gym
 import pickle
 import datetime
 
+from pymoo.algorithms.soo.nonconvex.cmaes import CMAES
+from pymoo.optimize import minimize
+
 import sys
 import os
 current = os.path.dirname(os.path.realpath(__file__))
@@ -13,13 +16,9 @@ sys.path.append(parent)
 
 from Models.static_neural_network import StaticNN
 from Models.hebbian_learning import HebbianAbcdNN
-from Optimisation.cma_es import CMA_ES
+from Utils.pymoo_utils import ValueBasedTermination
 
-""" 
-ARGUMENTS
-"""
-# Experiment parameters
-SEED = None
+SEED = 0
 READ_DATA = False
 STORE_DATA = True
 
@@ -29,26 +28,29 @@ MODELS = []
 MODELS.append('static')
 MODELS.append('abcd')
 
+MODEL = MODELS[MODEL_NUMBER]
+
 # Environment options
-ENV_NUMBER = 2
+ENV_NUMBER = 1
 ENVIRONMENTS = []
 ENVIRONMENTS.append('CartPole-v1')
 ENVIRONMENTS.append('MountainCar-v0')
 ENVIRONMENTS.append('LunarLander-v3')
 
+# Neural Network parameters
+HIDDEN_SIZES = [128, 64]
+# HIDDEN_SIZES = [128]
+
 # Optimisation parameters
-POPULATION_SIZE = 50
-ITERATIONS = 250
-SIGMA = 0.5
 MAX_EPISODE_STEPS = 1000
 TRIES = 10
+SIGMA = 0.5
+POPULATION_SIZE = 50
+ITERATIONS = 100
 
 # Evaluation parameters
 EVAL_TRIES = 3
 
-"""
-MODEL AND ENVIRONMENT PARAMETERS
-"""
 # Environment parameters
 ENV = ENVIRONMENTS[ENV_NUMBER]
 if ENV == 'CartPole-v1':
@@ -58,23 +60,22 @@ elif ENV == 'MountainCar-v0':
 elif ENV == 'LunarLander-v3':
     STOP_CONDITION = -200 * TRIES
 
-# Neural Network parameters
-MODEL = MODELS[MODEL_NUMBER]
-if MODEL == 'static':
-    HIDDEN_SIZES = [128, 64]
-elif MODEL == 'abcd':
-    HIDDEN_SIZES = [128]
-
 # Compute action from environment
 def compute_action(env_name, action):
     if env_name == 'CartPole-v1':
         action =  torch.sigmoid(action)
         return int(torch.round(action))
     elif env_name == 'MountainCar-v0':
+        # action = torch.relu(action)
+        # action = int(torch.round(action))
+        # return min(2, action)
         return int(nn.functional.hardtanh(action, 0, 2))
     elif env_name == 'LunarLander-v3':
+        # action = torch.relu(action)
+        # action = int(torch.round(action))
+        # return min(3, action)
         return int(nn.functional.hardtanh(action, 0, 2))
-
+    
 def get_model():
     if MODEL == 'static':
         model = StaticNN(input_size=env.observation_space.shape[0], output_size=1, hidden_sizes=HIDDEN_SIZES)
@@ -86,9 +87,7 @@ def get_model():
         raise ValueError('Model not found.')
     return model, n_variables
 
-"""
-OBJECTIVE FUNCTION
-"""
+# Objective function
 def objective_function(x, tries = TRIES, show=False):
     if show:
         env = gym.make(ENV, render_mode="human", max_episode_steps=MAX_EPISODE_STEPS)
@@ -120,10 +119,16 @@ def objective_function(x, tries = TRIES, show=False):
     env.close()
     return -np.sum(result)
 
+from pymoo.core.problem import ElementwiseProblem
+class RLtask(ElementwiseProblem):
 
-"""
-MAIN FUNCTION
-"""
+    def __init__(self, n_var, n_obj, xl, xu):
+        super().__init__(n_var=n_var, n_obj=n_obj, xl=xl, xu=xu)
+
+    def _evaluate(self, x, out, *args, **kwargs):
+        out["F"] = objective_function(x)
+
+# Example usage
 if __name__ == "__main__":
 
     if SEED:
@@ -136,28 +141,40 @@ if __name__ == "__main__":
     model, n_variables = get_model()
     print(f'MODEL = {MODEL}, ENVIRONMENT = {ENV}')
     print(f'hidden = {HIDDEN_SIZES}, n_variables = {n_variables}, Layers = {len(model.layers)}')
+    problem = RLtask(n_var=n_variables, n_obj=1, xl=-1, xu=1)
 
     # Instantiate the CMA-ES optimizer
-    optimizer = CMA_ES(func=objective_function, dim=n_variables, sigma=SIGMA, popsize=POPULATION_SIZE)
+    optimizer = CMAES(pop_size=POPULATION_SIZE, sigma=SIGMA, tolfun=0, tolx=0)
+    from pymoo.termination import get_termination
+    termination = get_termination('n_gen', ITERATIONS)
+    termination = get_termination('f_min', STOP_CONDITION)
+
 
     if READ_DATA:
-        input_filename = 'output_LunarLander-v3_static_2025-01-20_16-36-53.pkl'
-        with open(f'Experiments/Results/{input_filename}', 'rb') as file:
+        input_filename = 'output_cartpole-v1_static_2025-01-21_15-00-44.pkl'
+        with open(f'Results/{input_filename}', 'rb') as file:
             data = pickle.load(file)
         best_solution = data['best_solution']
         best_score = data['best_score']
     else:
         # Run optimization
-        best_solution, best_score = optimizer.optimize(iterations=ITERATIONS, stop_condition=STOP_CONDITION, seed=SEED)
+        res = minimize(
+            problem,
+            optimizer,
+            # ('n_gen' , ITERATIONS),
+            termination,
+            seed = SEED,
+            verbose = True
+        )
+        best_solution, best_score = res.X, res.F
 
-    
     print("Best solution:", best_solution)
     print("Best score:", best_score)
 
     # Store experiment data
     if STORE_DATA and not READ_DATA:
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        output_filename = f'Experiments/Results/output_{ENV}_{MODEL}_{timestamp}.pkl'
+        output_filename = f'Experiments/Results/output_pymoo_{ENV}_{MODEL}_{timestamp}.pkl'
         output = {'best_solution': best_solution,
                 'best_score': best_score,
                 'hidden_size': HIDDEN_SIZES,
@@ -167,6 +184,6 @@ if __name__ == "__main__":
             pickle.dump(output, file)
 
     # Show best solution
-    total_reward = objective_function(best_solution, tries = EVAL_TRIES, show=True)
-    print(-total_reward)
+    # total_reward = objective_function(best_solution, tries = EVAL_TRIES, show=True)
+    # print(-total_reward)
 
