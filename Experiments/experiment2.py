@@ -1,3 +1,21 @@
+"""
+This is the experiment 2. 
+I know this is a really bad name for an experiment but let me try to explain what is this experiment about.
+Basically, I am testing the following:
+    1. The artificial neural networks models, static and hebbian.
+    2. The CMA-ES function which was currently made by my friend Chat-GPT.
+    3. That I'm able to integrate my code with OpenAI Gymnasium environments.
+And basically, that's it. 
+
+"""
+
+
+""" 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Import required libraries and functions
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+"""
+# Libraries
 import numpy as np
 import torch 
 import torch.nn as nn
@@ -5,6 +23,7 @@ import gymnasium as gym
 import pickle
 import datetime
 
+# Setting the parent path directory to call functions from other folders
 import sys
 import os
 current = os.path.dirname(os.path.realpath(__file__))
@@ -16,12 +35,16 @@ from Models.hebbian_learning import HebbianAbcdNN
 from Optimisation.cma_es import CMA_ES
 
 """ 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ARGUMENTS
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 """
 # Experiment parameters
 SEED = None
-READ_DATA = False
-STORE_DATA = True
+READ_DATA = False   # Read data from input_filename
+STORE_DATA = True   # Store data o n output_filename
+
+input_filename = 'output_LunarLander-v3_static_2025-01-20_16-36-53.pkl'
 
 # Model options
 MODEL_NUMBER = 0
@@ -44,10 +67,13 @@ MAX_EPISODE_STEPS = 1000
 TRIES = 10
 
 # Evaluation parameters
+SHOW_BEST = True    # Runs the best solution for EVAL_TRIES
 EVAL_TRIES = 3
 
 """
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 MODEL AND ENVIRONMENT PARAMETERS
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 """
 # Environment parameters
 ENV = ENVIRONMENTS[ENV_NUMBER]
@@ -87,7 +113,9 @@ def get_model():
     return model, n_variables
 
 """
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 OBJECTIVE FUNCTION
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 """
 def objective_function(x, tries = TRIES, show=False):
     if show:
@@ -101,7 +129,6 @@ def objective_function(x, tries = TRIES, show=False):
         model.update_weights(torch.rand(n_variables))
         model.update_hebbian(torch.Tensor(x))
     result = np.zeros(tries)
-    action_count = np.zeros(env.action_space.n)
     with torch.no_grad():
         for i in range(tries):
             if SEED:
@@ -112,17 +139,17 @@ def objective_function(x, tries = TRIES, show=False):
             while not episode_over:
                 action = model.forward(torch.Tensor(observation))
                 action = compute_action(ENV, action)
-                action_count[action] += 1
                 observation, reward, terminated, truncated, info = env.step(action)
                 episode_over = terminated or truncated
                 result[i] += reward
-    # print(action_count)
     env.close()
     return -np.sum(result)
 
 
 """
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 MAIN FUNCTION
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 """
 if __name__ == "__main__":
 
@@ -130,7 +157,6 @@ if __name__ == "__main__":
         torch.manual_seed(SEED)
         torch.cuda.manual_seed(SEED)
         np.random.seed(SEED)
-
 
     env = gym.make(ENV, render_mode="human", max_episode_steps=MAX_EPISODE_STEPS)
     model, n_variables = get_model()
@@ -141,7 +167,6 @@ if __name__ == "__main__":
     optimizer = CMA_ES(func=objective_function, dim=n_variables, sigma=SIGMA, popsize=POPULATION_SIZE)
 
     if READ_DATA:
-        input_filename = 'output_LunarLander-v3_static_2025-01-20_16-36-53.pkl'
         with open(f'Experiments/Results/{input_filename}', 'rb') as file:
             data = pickle.load(file)
         best_solution = data['best_solution']
@@ -167,6 +192,7 @@ if __name__ == "__main__":
             pickle.dump(output, file)
 
     # Show best solution
-    total_reward = objective_function(best_solution, tries = EVAL_TRIES, show=True)
-    print(-total_reward)
+    if SHOW_BEST:
+        total_reward = objective_function(best_solution, tries = EVAL_TRIES, show=True)
+        print(f'Evaluation total reward {-total_reward}')
 
