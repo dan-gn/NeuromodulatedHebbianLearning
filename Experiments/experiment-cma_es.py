@@ -8,6 +8,7 @@ problem = get_problem("sphere")
 
 algorithm = CMAES(
     x0=np.random.random(problem.n_var),
+    restarts=10
     )
 
 from pymoo.termination import get_termination

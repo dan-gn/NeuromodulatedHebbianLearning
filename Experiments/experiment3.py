@@ -144,10 +144,10 @@ if __name__ == "__main__":
     problem = RLtask(n_var=n_variables, n_obj=1, xl=-1, xu=1)
 
     # Instantiate the CMA-ES optimizer
-    optimizer = CMAES(pop_size=POPULATION_SIZE, sigma=SIGMA, tolfun=0, tolx=0)
+    optimizer = CMAES(pop_size=POPULATION_SIZE, sigma=SIGMA, restarts=10, incpopsize=1)
     from pymoo.termination import get_termination
     termination = get_termination('n_gen', ITERATIONS)
-    termination = get_termination('f_min', STOP_CONDITION)
+    # termination = get_termination('f_min', STOP_CONDITION)
 
 
     if READ_DATA:

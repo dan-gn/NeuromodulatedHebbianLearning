@@ -48,14 +48,6 @@ class HebbianAbcdNN(StaticNN):
             #             self.hebbian_coeff[i][j, k, 2] * states[i][k] +
             #             self.hebbian_coeff[i][j, k, 3] * states[i+1][j] +
             #             self.hebbian_coeff[i][j, k, 4])
-            # print(f'Layer {i}')
-            # print(f'delta_weights {delta_weights[i].shape}')
-            # print(f'self.hebbian_coeff {self.hebbian_coeff[i][:, :, 2].shape}')
-            # print(f'states i {states[i].shape}')
-            # print(f'states i + 1 {states[i+1].shape}')
-            # print(f'states i x states i+1 {(states[i] @ states[i+1].T).shape}')
-            # print(f'A {states[i].repeat(1, states[i+1].shape[0]).T.shape}')
-            # print(f'B {states[i+1].repeat(1, states[i].shape[0]).shape}')
                     
             delta_weights[i] = self.hebbian_coeff[i][:, :, 0] * (
                 self.hebbian_coeff[i][:, :, 1] * (states[i+1] @ states[i].T) +
@@ -93,11 +85,3 @@ if __name__ == "__main__":
     print(w)
     model.update_weights(w)
     model.print_weights()
-
-
-    # print(summary(model, (4, 1), device='cpu'))
-    # # Calculate and print number of parameters per layer
-    # for name, param in model.named_parameters():
-    #     if param.requires_grad:  # Only include trainable parameters
-    #         num_params = param.numel()
-    #         print(f"Layer: {name}, Number of parameters: {num_params}")
