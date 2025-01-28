@@ -18,9 +18,9 @@ from Models.static_neural_network import StaticNN
 from Models.hebbian_learning import HebbianAbcdNN
 from Utils.pymoo_utils import ValueBasedTermination
 
-SEED = 0
+SEED = None
 READ_DATA = False
-STORE_DATA = True
+STORE_DATA = False
 
 # Model options
 MODEL_NUMBER = 0
@@ -46,7 +46,8 @@ MAX_EPISODE_STEPS = 1000
 TRIES = 10
 SIGMA = 0.5
 POPULATION_SIZE = 50
-ITERATIONS = 100
+ITERATIONS = 250
+EVALUATIONS = POPULATION_SIZE * ITERATIONS
 
 # Evaluation parameters
 EVAL_TRIES = 3
@@ -144,10 +145,11 @@ if __name__ == "__main__":
     problem = RLtask(n_var=n_variables, n_obj=1, xl=-1, xu=1)
 
     # Instantiate the CMA-ES optimizer
-    optimizer = CMAES(pop_size=POPULATION_SIZE, sigma=SIGMA, restarts=10, incpopsize=1)
+    optimizer = CMAES(pop_size=POPULATION_SIZE, sigma=SIGMA, restarts=EVALUATIONS, incpopsize=1)
     from pymoo.termination import get_termination
-    termination = get_termination('n_gen', ITERATIONS)
+    # termination = get_termination('n_eval', ITERATIONS)
     # termination = get_termination('f_min', STOP_CONDITION)
+    termination = ValueBasedTermination(STOP_CONDITION, EVALUATIONS)
 
 
     if READ_DATA:
@@ -184,6 +186,6 @@ if __name__ == "__main__":
             pickle.dump(output, file)
 
     # Show best solution
-    # total_reward = objective_function(best_solution, tries = EVAL_TRIES, show=True)
-    # print(-total_reward)
+    total_reward = objective_function(best_solution, tries = EVAL_TRIES, show=True)
+    print(-total_reward)
 

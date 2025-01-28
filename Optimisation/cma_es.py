@@ -4,12 +4,18 @@ class CMA_ES:
     def __init__(self, func, dim, sigma=0.5, popsize=50):
         self.func = func  # Objective function to minimize
         self.dim = dim  # Dimensionality of the search space
-        self.sigma = sigma  # Initial step size
+        self.initial_sigma = sigma  # Initial step size
         self.popsize = popsize  # Population size
-        self.mean = np.zeros(dim)  # Initial mean
-        self.cov = np.eye(dim, dtype=np.float16)  # Initial covariance matrix
+        self.restart_count = -1
+        self.restart()
         self.best_solution = None
         self.best_score = float("inf")
+
+    def restart(self):
+        self.restart_count += 1
+        self.mean = np.zeros(self.dim)  # Initial mean
+        self.cov = np.eye(self.dim, dtype=np.float16)  # Initial covariance matrix
+        self.sigma = self.initial_sigma
     
     def sample_population(self):
         """Samples a population of candidates."""
@@ -43,7 +49,7 @@ class CMA_ES:
             self.best_solution = population[0]
             self.best_score = scores[0]
     
-    def optimize(self, iterations=100, stop_condition=None, seed=None):
+    def optimize(self, iterations=100, stop_condition=None, seed=None, with_restarts=False):
         if seed:
             np.random.seed(seed)
         """Runs the optimization."""
@@ -57,14 +63,16 @@ class CMA_ES:
             # Update the distribution
             self.update_distribution(population, scores)
 
-            print(f'Iteration = {i}, Best score = {self.best_score}')
+            print(f'Iteration = {i}, Mean score = {scores.mean()}, Best score = {self.best_score}, Sigma = {self.sigma}, Restarts = {self.restart_count}')
 
-            if stop_condition:
+            if stop_condition is not None:
                 if self.best_score <= stop_condition:
                     print('Stopping condition achieved.')
                     break
 
             # self.func(self.best_solution, tries=1, show=True)
+            if self.sigma < 1e-8 or self.sigma > 1e16:
+                self.restart()
             
         return self.best_solution, self.best_score
 

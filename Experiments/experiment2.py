@@ -33,6 +33,7 @@ sys.path.append(parent)
 from Models.static_neural_network import StaticNN
 from Models.hebbian_learning import HebbianAbcdNN
 from Optimisation.cma_es import CMA_ES
+from Optimisation.cma_es_v2 import PureCMAES
 
 """ 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -42,9 +43,9 @@ ARGUMENTS
 # Experiment parameters
 SEED = None
 READ_DATA = False   # Read data from input_filename
-STORE_DATA = True   # Store data o n output_filename
+STORE_DATA = False   # Store data on output_filename
 
-input_filename = 'output_LunarLander-v3_static_2025-01-20_16-36-53.pkl'
+input_filename = 'output_MountainCar-v0_static_2025-01-27_21-10-50.pkl'
 
 # Model options
 MODEL_NUMBER = 0
@@ -53,7 +54,7 @@ MODELS.append('static')
 MODELS.append('abcd')
 
 # Environment options
-ENV_NUMBER = 2
+ENV_NUMBER = 1
 ENVIRONMENTS = []
 ENVIRONMENTS.append('CartPole-v1')
 ENVIRONMENTS.append('MountainCar-v0')
@@ -61,7 +62,7 @@ ENVIRONMENTS.append('LunarLander-v3')
 
 # Optimisation parameters
 POPULATION_SIZE = 50
-ITERATIONS = 250
+ITERATIONS = 500
 SIGMA = 0.5
 MAX_EPISODE_STEPS = 1000
 TRIES = 10
@@ -165,6 +166,7 @@ if __name__ == "__main__":
 
     # Instantiate the CMA-ES optimizer
     optimizer = CMA_ES(func=objective_function, dim=n_variables, sigma=SIGMA, popsize=POPULATION_SIZE)
+    # optimizer = PureCMAES(objective_function, N=n_variables, sigma=SIGMA, stopfitness=STOP_CONDITION)
 
     if READ_DATA:
         with open(f'Experiments/Results/{input_filename}', 'rb') as file:
@@ -174,6 +176,7 @@ if __name__ == "__main__":
     else:
         # Run optimization
         best_solution, best_score = optimizer.optimize(iterations=ITERATIONS, stop_condition=STOP_CONDITION, seed=SEED)
+        # best_solution, best_score = optimizer.optimize()
 
     
     print("Best solution:", best_solution)

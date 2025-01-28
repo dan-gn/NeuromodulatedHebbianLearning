@@ -8,7 +8,10 @@ problem = get_problem("sphere")
 
 algorithm = CMAES(
     x0=np.random.random(problem.n_var),
-    restarts=10
+    # restarts=1,
+    tolfun=1e-2,
+    # tolx=1e-2,
+    tolstagnation=10
     )
 
 from pymoo.termination import get_termination
@@ -23,7 +26,7 @@ res = minimize(problem,
                verbose=True)
 
 # Check the termination reason
-print("Termination reason:", res.exit)
+print("Termination reason:", res)
 
 # Check the optimal value found
 print("Optimal value:", res)
