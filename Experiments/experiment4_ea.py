@@ -1,14 +1,3 @@
-"""
-This is the experiment 2. 
-I know this is a really bad name for an experiment but let me try to explain what is this experiment about.
-Basically, I am testing the following:
-    1. The artificial neural networks models, static and hebbian.
-    2. The CMA-ES function which was currently made by my friend Chat-GPT.
-    3. That I'm able to integrate my code with OpenAI Gymnasium environments.
-And basically, that's it. 
-
-"""
-
 
 """ 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -33,10 +22,13 @@ sys.path.append(parent)
 
 from Models.static_neural_network import StaticNN
 from Models.hebbian_learning import HebbianAbcdNN
-from Optimisation.cma_es import CMA_ES
-from Optimisation.cma_es_v2 import PureCMAES
+# from Optimisation.cma_es import CMA_ES
+# from Optimisation.cma_es_v2 import PureCMAES
+from Optimisation.ea import EvolutionaryAlgorithm
 
-from pymoo.algorithms.soo.nonconvex.cmaes import CMAES
+from experiments_log import append_line_to_csv
+
+# from pymoo.algorithms.soo.nonconvex.cmaes import CMAES
 from pymoo.optimize import minimize
 from Utils.pymoo_utils import ValueBasedTermination
 from pymoo.core.problem import ElementwiseProblem
@@ -70,18 +62,18 @@ MODELS.append('static')
 MODELS.append('abcd')
 
 # Environment options
-ENV_NUMBER = 1
+ENV_NUMBER = 2
 ENVIRONMENTS = []
 ENVIRONMENTS.append('CartPole-v1')
 ENVIRONMENTS.append('MountainCar-v0')
 ENVIRONMENTS.append('LunarLander-v3')
 
 # Optimisation parameters
-POPULATION_SIZE = 50
-ITERATIONS = 200
+POPULATION_SIZE = 10
+ITERATIONS = 2
 EVALUATIONS = POPULATION_SIZE * ITERATIONS
-SIGMA = 0.5
 TRIES = 10
+MAX_STAGNMENT = 50
 
 # Evaluation parameters
 SHOW_BEST = True    # Runs the best solution for EVAL_TRIES
@@ -192,11 +184,7 @@ if __name__ == "__main__":
         print(f'hidden = {HIDDEN_SIZES}, n_variables = {n_variables}, Layers = {len(model.layers)}')
 
         # Instantiate the CMA-ES optimizer
-        # optimizer = CMA_ES(func=objective_function, dim=n_variables, sigma=SIGMA, popsize=POPULATION_SIZE)
-        # optimizer = PureCMAES(objective_function, N=n_variables, sigma=SIGMA, stopfitness=STOP_CONDITION)
-        optimizer = CMAES(pop_size=POPULATION_SIZE, sigma=SIGMA, restarts=EVALUATIONS, incpopsize=1, restart_from_best= 'True')
-        termination = ValueBasedTermination(STOP_CONDITION, EVALUATIONS)
-        problem = RLtask(n_var=n_variables, n_obj=1, xl=-1, xu=1, seed=seed)
+        optimizer = EvolutionaryAlgorithm(n_variables=n_variables, objective_function=objective_function, max_iterations=ITERATIONS, population_size=POPULATION_SIZE, max_stagnment=MAX_STAGNMENT)
 
         if READ_DATA:
             with open(f'Experiments/Results/{input_filename}', 'rb') as file:
@@ -205,19 +193,7 @@ if __name__ == "__main__":
             best_score = data['best_score']
         else:
             # Run optimization
-            # best_solution, best_score = optimizer.optimize(iterations=ITERATIONS, stop_condition=STOP_CONDITION, seed=SEED, with_restarts=True)
-            # best_solution, best_score = optimizer.optimize()
-            res = minimize(
-                problem,
-                optimizer,
-                # ('n_gen' , ITERATIONS),
-                termination,
-                seed = SEED,
-                verbose = True
-            )
-            best_solution, best_score = res.X, res.F
-
-
+            best_solution, best_score = optimizer.run(STOP_CONDITION, SEED)
 
         
         print("Best solution:", best_solution)
@@ -226,16 +202,35 @@ if __name__ == "__main__":
         # Store experiment data
         if STORE_DATA and not READ_DATA:
             timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-            output_filename = f'Experiments/Results/exp2_march_pymoo/exp2_output_pymoo_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}.pkl'
+            output_filename = f'Experiments/Results/exp4_march_ea/exp4_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}.pkl'
             output = {'best_solution': best_solution,
                     'best_score': best_score,
                     'hidden_size': HIDDEN_SIZES,
                     'population_size': POPULATION_SIZE,
                     'max_iterations': ITERATIONS,
-                    # 'n_iterations' : optimizer.i,
+                    'n_iterations' : optimizer.i,
+                    'record' : optimizer.record, 
                     'seed': SEED}
             with open(output_filename, 'wb') as file:
                 pickle.dump(output, file)
+
+            log_file = f'Experiments/experiments_log.csv'
+            new_line = [output_filename, 'EA', POPULATION_SIZE, ITERATIONS, ENV, MODEL, best_score, optimizer.i, str(HIDDEN_SIZES), SEED, MAX_STAGNMENT, TRIES]
+            new_line = {
+                'filename' : output_filename,
+                'algorithm' : 'EA',
+                'environment' : ENV,
+                'model' : MODEL,
+                'seed' : SEED,
+                'population_size': POPULATION_SIZE,
+                'max_iterations': ITERATIONS,
+                'n_iterations' : optimizer.i,
+                'best_score' : best_score, 
+                'hidden_size' : str(HIDDEN_SIZES),
+                'max_stagnment' : MAX_STAGNMENT,
+                'tries' : TRIES
+            }
+            append_line_to_csv(log_file, new_line)
 
         # Show best solution
         total_reward = objective_function(best_solution, tries = EVAL_TRIES, show=SHOW_BEST, seed=1996)

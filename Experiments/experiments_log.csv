@@ -1,0 +1,3 @@
+filename,algorithm,environment,model,seed,population_size,max_iterations,n_iterations,best_score,hidden_size,max_stagnment,tries
+Experiments/Results/exp4_march_ea/exp4_output_ea_LunarLander-v3_static_seed-0_time-2025-03-19_23-02-34.pkl,EA,LunarLander-v3,static,0,10,2,1,1340.262642262907,"[64, 32]",50,10
+Experiments/Results/exp4_march_ea/exp4_output_ea_LunarLander-v3_static_seed-0_time-2025-03-19_23-02-57.pkl,EA,LunarLander-v3,static,0,10,2,1,1340.262642262907,"[64, 32]",50,10

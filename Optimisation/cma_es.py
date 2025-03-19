@@ -16,6 +16,8 @@ class CMA_ES:
         self.mean = np.zeros(self.dim)  # Initial mean
         self.cov = np.eye(self.dim, dtype=np.float16)  # Initial covariance matrix
         self.sigma = self.initial_sigma
+        if self.restart_count >= 1:
+            self.mean = self.best_solution
     
     def sample_population(self):
         """Samples a population of candidates."""
@@ -50,20 +52,18 @@ class CMA_ES:
             self.best_score = scores[0]
     
     def optimize(self, iterations=100, stop_condition=None, seed=None, with_restarts=False):
-        if seed:
-            np.random.seed(seed)
         """Runs the optimization."""
-        for i in range(iterations):
+        for self.i in range(iterations):
             # Sample population
             population = self.sample_population()
             
             # Evaluate the population
-            scores = np.array([self.func(ind) for ind in population])
+            scores = np.array([self.func(ind, seed=seed) for ind in population])
             
             # Update the distribution
             self.update_distribution(population, scores)
 
-            print(f'Iteration = {i}, Mean score = {scores.mean()}, Best score = {self.best_score}, Sigma = {self.sigma}, Restarts = {self.restart_count}')
+            print(f'Iteration = {self.i}, Mean score = {scores.mean()}, Best score = {self.best_score}, Sigma = {self.sigma}, Restarts = {self.restart_count}')
 
             if stop_condition is not None:
                 if self.best_score <= stop_condition:
@@ -71,7 +71,7 @@ class CMA_ES:
                     break
 
             # self.func(self.best_solution, tries=1, show=True)
-            if self.sigma < 1e-8 or self.sigma > 1e16:
+            if with_restarts and (self.sigma < 1e-8 or self.sigma > 1e16):
                 self.restart()
             
         return self.best_solution, self.best_score

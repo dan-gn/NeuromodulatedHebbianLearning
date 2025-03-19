@@ -38,7 +38,7 @@ ENVIRONMENTS.append('MountainCar-v0')
 ENVIRONMENTS.append('LunarLander-v3')
 
 # Neural Network parameters
-HIDDEN_SIZES = [128, 64]
+HIDDEN_SIZES = [64, 32]
 # HIDDEN_SIZES = [128]
 
 # Optimisation parameters
@@ -145,7 +145,7 @@ if __name__ == "__main__":
     problem = RLtask(n_var=n_variables, n_obj=1, xl=-1, xu=1)
 
     # Instantiate the CMA-ES optimizer
-    optimizer = CMAES(pop_size=POPULATION_SIZE, sigma=SIGMA, restarts=EVALUATIONS, incpopsize=1)
+    optimizer = CMAES(pop_size=POPULATION_SIZE, sigma=SIGMA, restarts=EVALUATIONS, incpopsize=1, restart_from_best= 'True')
     from pymoo.termination import get_termination
     # termination = get_termination('n_eval', ITERATIONS)
     # termination = get_termination('f_min', STOP_CONDITION)
