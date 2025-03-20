@@ -6,11 +6,13 @@ class StaticNN(nn.Module):
 
     def __init__(self, input_size, output_size, hidden_sizes = [128, 64]) -> None:
         super(StaticNN, self).__init__()
-
         self.layers = []
         self.layer_sizes = [input_size] + hidden_sizes + [output_size]
         for i in range(len(self.layer_sizes)-1):
             self.layers.append(nn.Linear(self.layer_sizes[i], self.layer_sizes[i+1]))
+
+        # for layer in self.layers:
+        #     print(layer.weight.shape)
 
         self.activation = nn.Tanh()
         self.ABCD = torch.Tensor(input_size, output_size, 5)

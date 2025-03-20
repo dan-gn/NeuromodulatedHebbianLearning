@@ -67,4 +67,5 @@ Experiments/Results/exp4_march_ea/exp4_output_ea_CartPole-v1_abcd_seed-6_time-20
 Experiments/Results/exp4_march_ea/exp4_output_ea_CartPole-v1_abcd_seed-7_time-2025-03-20_12-25-57.pkl,EA,CartPole-v1,abcd,7,100,1000,12,-50000.0,"[64, 32]",50,100,-43959.0,100.0,,
 Experiments/Results/exp4_march_ea/exp4_output_ea_MountainCar-v0_static_seed-0_time-2025-03-20_16-30-40.pkl,EA,MountainCar-v0,static,0,50,1000,65,2120.0,"[64, 32]",50,20,4000.0,20.0,643.4187331199646,
 Experiments/Results/exp4_march_ea/exp4_output_ea_MountainCar-v0_static_seed-1_time-2025-03-20_16-42-09.pkl,EA,MountainCar-v0,static,1,50,1000,70,2160.0,"[64, 32]",50,20,2913.0,20.0,689.3549721240997,
-Experiments/Results/exp4_march_ea/exp4_output_ea_Acrobot-v1_static_seed-0_time-2025-03-20_17-41-24.pkl,EA,Acrobot-v1,static,0,50,1000,0,1898.0,"[64, 32]",50,20,1655.0,20.0,189.07026743888855,0.01
+Experiments/Results/exp4_march_ea/exp4_output_ea_Acrobot-v1_static_seed-0_time-2025-03-20_17-41-24.pkl,EA,Acrobot-v1,static,0,50,1000,0,1898.0,"[64, 32]",50,20,1655.0,20.0,189.07026743888852,0.01
+Experiments/Results/exp4_march_ea/exp4_output_ea_LunarLander-v3_static_seed-0_time-2025-03-20_19-58-59.pkl,EA,LunarLander-v3,static,0,100,1000,70,-4060.624979944415,"[64, 32]",50,20,-755.2858057276273,20.0,2003.1257946491241,0.01

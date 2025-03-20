@@ -1,6 +1,7 @@
 import numpy as np
 import torch 
 import torch.nn as nn
+import torch.nn.functional as F
 from Models.static_neural_network import StaticNN
 
 class HebbianAbcdNN(StaticNN):
@@ -68,9 +69,11 @@ class HebbianAbcdNN(StaticNN):
         if self.env_name == 'CartPole-v1':
             states.append(torch.sigmoid(y).unsqueeze(1))
         elif self.env_name in ['MountainCar-v0', 'Acrobot-v1']:
-            states.append(nn.functional.hardtanh(y, 0, 2).unsqueeze(1))
+            # states.append(nn.functional.hardtanh(y, 0, 2).unsqueeze(1))
+            states.append(F.softmax(y, dim=0).unsqueeze(1))
         elif self.env_name == 'LunarLander-v3':
-            states.append(nn.functional.hardtanh(y, 0, 3).unsqueeze(1))
+            # states.append(nn.functional.hardtanh(y, 0, 3).unsqueeze(1))
+            states.append(F.softmax(y, dim=0).unsqueeze(1))
         self.apply_hebbian_rules(states)
 
         return y

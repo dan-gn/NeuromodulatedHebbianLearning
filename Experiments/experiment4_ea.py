@@ -8,6 +8,7 @@ Import required libraries and functions
 import numpy as np
 import torch 
 import torch.nn as nn
+import torch.nn.functional as F
 import gymnasium as gym
 import pickle
 import datetime
@@ -60,17 +61,17 @@ input_filename = 'output_MountainCar-v0_static_2025-01-27_21-10-50.pkl'
 # Model options
 MODEL_NUMBER = 0
 MODELS = []
-MODELS.append('static')
 MODELS.append('abcd')
+MODELS.append('static')
 MODELS.append('neuromodulated_hb')
 
 # Environment options
 ENV_NUMBER = 3
 ENVIRONMENTS = []
+ENVIRONMENTS.append('Acrobot-v1')
 ENVIRONMENTS.append('LunarLander-v3')
 ENVIRONMENTS.append('CartPole-v1')
 ENVIRONMENTS.append('MountainCar-v0')
-ENVIRONMENTS.append('Acrobot-v1')
 
 # Optimisation parameters
 POPULATION_SIZE = 100
@@ -121,24 +122,37 @@ def compute_action(env_name, action):
         action =  torch.sigmoid(action)
         return int(torch.round(action))
     elif env_name in ['MountainCar-v0', 'Acrobot-v1']:
-        return int(nn.functional.hardtanh(action, 0, 2))
+        # return int(nn.functional.hardtanh(action, 0, 2))
+        probs = F.softmax(action, dim=0)  
+        return int(probs.argmax())
     elif env_name == 'LunarLander-v3':
-        return int(nn.functional.hardtanh(action, 0, 3))
+        # return int(nn.functional.hardtanh(action, 0, 3))
+        probs = F.softmax(action, dim=0)  
+        return int(probs.argmax())
 
 # Get the model and the number of variables
-def get_model():
+def get_model(output_size):
     if MODEL == 'static':
-        model = StaticNN(input_size=env.observation_space.shape[0], output_size=1, hidden_sizes=HIDDEN_SIZES)
+        model = StaticNN(input_size=env.observation_space.shape[0], output_size=output_size, hidden_sizes=HIDDEN_SIZES)
         n_variables = model.get_n_weights()
     elif MODEL == 'abcd':
-        model =  HebbianAbcdNN(input_size=env.observation_space.shape[0], output_size=1, hidden_sizes=HIDDEN_SIZES, env_name=ENV)
+        model =  HebbianAbcdNN(input_size=env.observation_space.shape[0], output_size=output_size, hidden_sizes=HIDDEN_SIZES, env_name=ENV)
         n_variables = model.get_n_weights() * 5
     elif MODEL == 'neuromodulated_hb':
-        model =  TimeBasedNeuromodulatedHebbianNN(input_size=env.observation_space.shape[0], output_size=1, hidden_sizes=HIDDEN_SIZES, env_name=ENV, lambda_decay=0.001)
+        model =  TimeBasedNeuromodulatedHebbianNN(input_size=env.observation_space.shape[0], output_size=output_size, hidden_sizes=HIDDEN_SIZES, env_name=ENV, lambda_decay=0.001)
         n_variables = model.get_n_weights() * 5
     else:
         raise ValueError('Model not found.')
     return model, n_variables
+
+def get_output_size(env):
+    if env == 'CartPole-v1':
+        return 1
+    elif env in ['MountainCar-v0', 'Acrobot-v1']:
+        return 3
+    elif env == 'LunarLander-v3':
+        return 4
+
 
 """
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -150,13 +164,15 @@ def objective_function(x, tries = TRIES, show=False, seed = None):
         env = gym.make(ENV, render_mode="human", max_episode_steps=MAX_EPISODE_STEPS)
     else:
         env = gym.make(ENV, max_episode_steps=MAX_EPISODE_STEPS)
-    model, n_variables = get_model()
+    output_size = get_output_size(ENV)
+    model, n_variables = get_model(output_size)
     if MODEL == 'static':
         model.update_weights(torch.Tensor(x))
     elif MODEL == 'abcd' or MODEL == 'neuromodulated_hb':
         model.update_weights(torch.rand(n_variables))
         model.update_hebbian(torch.Tensor(x))
     result = np.zeros(tries)
+    action_record = []
     with torch.no_grad():
         for i in range(tries):
             if seed is not None:
@@ -167,12 +183,14 @@ def objective_function(x, tries = TRIES, show=False, seed = None):
             while not episode_over:
                 action = model.forward(torch.Tensor(observation))
                 action = compute_action(ENV, action)
+                action_record.append(action)
                 observation, reward, terminated, truncated, info = env.step(action)
                 episode_over = terminated or truncated
                 result[i] += reward
             if ENV_NUMBER == 1 and truncated == True:
                 result[i] += -200
     env.close()
+    # print(np.array(action_record).mean())
     return -np.sum(result)
 
 
@@ -199,7 +217,8 @@ if __name__ == "__main__":
                     random.seed(SEED)
 
                 env = gym.make(ENV, render_mode="human", max_episode_steps=MAX_EPISODE_STEPS)
-                model, n_variables = get_model()
+                output_size = get_output_size(ENV)
+                model, n_variables = get_model(output_size)
                 print(f'MODEL = {MODEL}, ENVIRONMENT = {ENV}')
                 print(f'hidden = {HIDDEN_SIZES}, n_variables = {n_variables}, Layers = {len(model.layers)}')
 
