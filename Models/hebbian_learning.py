@@ -67,7 +67,7 @@ class HebbianAbcdNN(StaticNN):
 
         if self.env_name == 'CartPole-v1':
             states.append(torch.sigmoid(y).unsqueeze(1))
-        elif self.env_name == 'MountainCar-v0':
+        elif self.env_name in ['MountainCar-v0', 'Acrobot-v1']:
             states.append(nn.functional.hardtanh(y, 0, 2).unsqueeze(1))
         elif self.env_name == 'LunarLander-v3':
             states.append(nn.functional.hardtanh(y, 0, 3).unsqueeze(1))
