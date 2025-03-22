@@ -63,7 +63,7 @@ MODEL_NUMBER = 0
 MODELS = []
 MODELS.append('abcd')
 MODELS.append('neuromodulated_hb')
-# MODELS.append('static')
+MODELS.append('static')
 
 # Environment options
 ENV_NUMBER = 3
@@ -422,7 +422,7 @@ if __name__ == "__main__":
                 output_size = get_output_size(ENV)
                 model, n_variables = get_model(output_size)
                 print(f'MODEL = {MODEL}, ENVIRONMENT = {ENV}')
-                print(f'hidden = {HIDDEN_SIZES}, n_variables = {n_variables}, Layers = {len(model.layers)}')
+                print(f'hidden = {HIDDEN_SIZES}, n_variables = {n_variables}, Layers = {len(model.layers)}, Stopping criteria = {STOP_CONDITION}')
 
                 # Instantiate the CMA-ES optimizer
                 optimizer = EvolutionaryAlgorithm(n_variables=n_variables, max_iterations=ITERATIONS, population_size=POPULATION_SIZE, max_stagnment=MAX_STAGNMENT, model_name=MODEL, environment_name=ENV, tries=TRIES)
