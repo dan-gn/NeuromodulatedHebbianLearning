@@ -12,6 +12,11 @@ class TimeBasedNeuromodulatedHebbianNN(HebbianAbcdNN):
     def decay_function(self):
         return np.exp(-self.lammbda_decay * self.current_step)
     
+    def update_weights(self, weights):
+        super().update_weights(weights)
+        self.current_step = 0
+
+    
     def apply_hebbian_rules(self, states):
         delta_weights = [layer.weight for layer in self.layers]
         modulation_coeff = self.decay_function()

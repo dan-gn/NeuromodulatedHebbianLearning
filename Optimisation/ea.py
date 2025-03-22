@@ -1,12 +1,19 @@
 import numpy as np
 import math
+import time
+
+from concurrent.futures import ProcessPoolExecutor
+import gymnasium as gym
+import torch
+
+
 
 class Individual:
 
-    def __init__(self, n_variables):
+    def __init__(self, n_variables, genotype = None, fitness = None):
         self.n_variables = n_variables
-        self.genotype = None
-        self.fitness = None
+        self.genotype = genotype
+        self.fitness = fitness
         self.initial_value_range = 5 # +- initial_value_range
 
     def random_initialise(self):
@@ -66,7 +73,7 @@ class EvolutionaryAlgorithm:
         if mean_fitness != 0 and mean_fitness != math.inf:
             fitness /= mean_fitness
         return np.exp(-beta * fitness)
-
+    
     def parent_selection(self):
         self.probs = self.compute_parent_selection_prob()
         parents = [self.tournament_selection() for _ in range(int(self.population_size/2))]
@@ -89,13 +96,13 @@ class EvolutionaryAlgorithm:
         offspring2 = 0.5 * ((1 - beta) * parent1 + (1 + beta) * parent2)
         return offspring1, offspring2
 
-    def crossover(self, parents):
-        offspring = [Individual(self.n_variables) for _ in range(self.population_size)]
-        for i, p in enumerate(parents):
-            genotype1, genotype2 = self.sbx(p)
-            offspring[i*2].genotype = genotype1
-            offspring[i*2 + 1].genotype = genotype2
-        return offspring
+    # def crossover(self, parents):
+    #     offspring = [Individual(self.n_variables) for _ in range(self.population_size)]
+    #     for i, p in enumerate(parents):
+    #         genotype1, genotype2 = self.sbx(p)
+    #         offspring[i*2].genotype = genotype1
+    #         offspring[i*2 + 1].genotype = genotype2
+    #     return offspring
 
     def polynomial_muatation(self, x):
         r = np.random.uniform(0, 1)
@@ -105,34 +112,92 @@ class EvolutionaryAlgorithm:
             delta = 1 - (2 * (1-r)) ** (1 / (self.mutation_eta+1))
         return x + delta
 
-    def mutation(self, population):
-        for i, member in enumerate(population):
-            for j, gen in enumerate(member.genotype):
-                r = np.random.uniform(0, 1)
-                if r <= self.mutation_probability:
-                    population[i].genotype[j] = self.polynomial_muatation(gen)
-        return population
+    # def mutation(self, population):
+    #     for i, member in enumerate(population):
+    #         for j, gen in enumerate(member.genotype):
+    #             r = np.random.uniform(0, 1)
+    #             if r <= self.mutation_probability:
+    #                 population[i].genotype[j] = self.polynomial_muatation(gen)
+    #     return population
     
-    def evaluate_population(self, population):
-        for i, member in enumerate(population):
-            population[i].fitness = self.evaluate(member.genotype, seed = self.seed)
-            if population[i].fitness < self.best_individual.fitness:
-                self.best_individual.genotype = population[i].genotype
-                self.best_individual.fitness = population[i].fitness
-                self.stagnment_iterations = -1
-        self.stagnment_iterations += 1
-        return population
+    # def evaluate_population(self, population):
+    #     for i, member in enumerate(population):
+    #         population[i].fitness = self.evaluate(member.genotype, seed = self.seed)
+    #         if population[i].fitness < self.best_individual.fitness:
+    #             self.best_individual.genotype = population[i].genotype
+    #             self.best_individual.fitness = population[i].fitness
+    #             self.stagnment_iterations = -1
+    #     self.stagnment_iterations += 1
+    #     return population
 
     def elitism(self, offspring):
         self.population = sorted(self.population, key=lambda x: x.fitness)
         offspring = sorted(offspring, key=lambda x: x.fitness)
         self.population[self.elitism_index:] = offspring[:-self.elitism_index]
 
+        if offspring[0].fitness < self.best_individual.fitness:
+            self.best_individual.genotype = offspring[0].genotype
+            self.best_individual.fitness = offspring[0].fitness
+            self.stagnment_iterations = -1
+        self.stagnment_iterations += 1
+
+    def mutate(self, genotype):
+        genotype = np.array(genotype)  # ensure it's a NumPy array
+        random_values = np.random.uniform(0, 1, size=genotype.shape)
+        mutation_mask = random_values <= self.mutation_probability
+        for idx in np.where(mutation_mask)[0]:
+            genotype[idx] = self.polynomial_muatation(genotype[idx])
+        return genotype
+
+    def crossover_and_mutation(self, parents):
+        # offspring = [Individual(self.n_variables) for _ in range(self.population_size)]
+        # for i, p in enumerate(parents):
+        #     genotype1, genotype2 = self.sbx(p)
+        #     offspring[i*2].genotype = self.mutate(genotype1)
+        #     offspring[i*2].fitness = self.evaluate(offspring[i*2].genotype, seed = self.seed)
+        #     offspring[i*2 + 1].genotype = self.mutate(genotype2)
+        #     offspring[i*2 + 1].fitness = self.evaluate(offspring[i*2 + 1].genotype, seed = self.seed)
+        # return offspring
+        offspring = []
+        for p in parents:
+            genotype1, genotype2 = self.sbx(p)
+            mutated_g1 = self.mutate(genotype1)
+            fitness_g1 = self.evaluate(mutated_g1, seed=self.seed)
+            offspring.append(Individual(self.n_variables, genotype=mutated_g1, fitness=fitness_g1))
+            mutated_g2 = self.mutate(genotype2)
+            fitness_g2 = self.evaluate(mutated_g2, seed=self.seed)
+            offspring.append(Individual(self.n_variables, genotype=mutated_g2, fitness=fitness_g2))
+        return offspring
+    
+    def parallel_crossover_and_mutation(self, parents):
+        offspring_genotypes = []
+        for p in parents:
+            genotype1, genotype2 = self.sbx(p)
+            offspring_genotypes.append(self.mutate(genotype1))
+            offspring_genotypes.append(self.mutate(genotype2))
+
+        # Parallel evaluation of all genotypes
+        with ProcessPoolExecutor() as executor:
+            fitnesses = list(executor.map(lambda g: self.evaluate(g, seed=self.seed), offspring_genotypes))
+
+        # Build offspring individuals
+        offspring = [
+            Individual(self.n_variables, genotype=g, fitness=f)
+            for g, f in zip(offspring_genotypes, fitnesses)
+        ]
+
+        return offspring
+
     def update_population(self):
         parents = self.parent_selection()
-        offspring = self.crossover(parents)
-        offspring = self.mutation(offspring)
-        offspring = self.evaluate_population(offspring)
+        # offspring = self.crossover(parents)
+        # offspring = self.mutation(offspring)
+        start_time = time.time()
+        offspring = self.crossover_and_mutation(parents)
+        print(f'Normal time = {time.time() - start_time}')
+        start_time = time.time()
+        offspring = self.parallel_crossover_and_mutation(parents)
+        print(f'Parallel time = {time.time() - start_time}')
         self.elitism(offspring)
 
     def run(self, stop_criteria, seed):
