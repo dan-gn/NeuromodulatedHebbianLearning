@@ -448,7 +448,7 @@ if __name__ == "__main__":
         # Store experiment data
         if STORE_DATA and not READ_DATA:
             timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-            output_filename = f'Experiments/Results/exp4_march_ea/exp4_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}.pkl'
+            output_filename = f'Experiments/Results/gecco25_gc/exp4_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}.pkl'
             output = {'best_solution': best_solution,
                     'best_score': best_score,
                     'hidden_size': HIDDEN_SIZES,
