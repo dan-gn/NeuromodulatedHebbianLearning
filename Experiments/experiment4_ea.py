@@ -166,8 +166,8 @@ def objective_function(x, model_name = MODEL, environment_name = ENV, tries = TR
         env = gym.make(environment_name, max_episode_steps=MAX_EPISODE_STEPS)
     output_size = get_output_size(environment_name)
     model, n_variables = get_model(output_size)
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model.to(device)
+    # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    # model.to(device)
     if model_name == 'static':
         model.update_weights(torch.Tensor(x))
     elif model_name == 'abcd' or model_name == 'neuromodulated_hb':
