@@ -59,7 +59,7 @@ STORE_DATA = True   # Store data on output_filename
 input_filename = 'output_MountainCar-v0_static_2025-01-27_21-10-50.pkl'
 
 # Model options
-MODEL_NUMBER = 0
+MODEL_NUMBER = 1
 MODELS = []
 MODELS.append('abcd')
 MODELS.append('neuromodulated_hb')
@@ -212,6 +212,7 @@ class Individual:
         self.n_variables = n_variables
         self.genotype = genotype
         self.fitness = fitness
+        self.fitness_test = None
         self.initial_value_range = 5 # +- initial_value_range
 
     def random_initialise(self):
@@ -246,6 +247,7 @@ class EvolutionaryAlgorithm:
             if population[i].fitness < self.best_individual.fitness:
                 self.best_individual.genotype = population[i].genotype
                 self.best_individual.fitness = population[i].fitness
+                self.best_individual.fitness_test = objective_function(self.best_individual.genotype, seed = 1996, model_name=self.model_name, environment_name=self.environment_name, tries=100) 
         return population
 
     def roulette_wheel(self, p):
@@ -312,6 +314,7 @@ class EvolutionaryAlgorithm:
         if offspring[0].fitness < self.best_individual.fitness:
             self.best_individual.genotype = offspring[0].genotype
             self.best_individual.fitness = offspring[0].fitness
+            self.best_individual.fitness_test = objective_function(self.best_individual.genotype, seed = 1996, model_name=self.model_name, environment_name=self.environment_name, tries=100) 
             self.stagnment_iterations = -1
         self.stagnment_iterations += 1
 
@@ -390,7 +393,7 @@ class EvolutionaryAlgorithm:
                 self.population[-1].fitness = self.best_individual.fitness
             else:
                 self.update_population()
-            print(f'Iteration = {self.i}, Mean fitness = {np.mean([xi.fitness for xi in self.population])}, Best fitness = {self.best_individual.fitness}')
+            print(f'Iteration = {self.i}, Mean fitness = {np.mean([xi.fitness for xi in self.population])}, Best fitness = {self.best_individual.fitness}, Best fitness testing = {self.best_individual.fitness_test}')
             if self.best_individual.fitness <= stop_criteria:
                 print('Stop criteria achieved!')
                 break
@@ -405,7 +408,7 @@ MAIN FUNCTION
 if __name__ == "__main__":
 
     MAX_EPISODE_STEPS, STOP_CONDITION, HIDDEN_SIZES = set_model_and_environment_parameters(ENV, MODEL)
-    for seed in range(30):
+    for seed in range(6, 8):
 
         SEED = seed
 

@@ -31,19 +31,22 @@ from Models.neuromodulated_hb import TimeBasedNeuromodulatedHebbianNN
 
 from experiments_log import append_line_to_csv
 
-# from pymoo.algorithms.soo.nonconvex.cmaes import CMAES
+from pymoo.algorithms.soo.nonconvex.cmaes import CMAES
 from pymoo.optimize import minimize
 from Utils.pymoo_utils import ValueBasedTermination
 from pymoo.core.problem import ElementwiseProblem
 
 class RLtask(ElementwiseProblem):
 
-    def __init__(self, n_var, n_obj, xl, xu, seed):
+    def __init__(self, n_var, n_obj, xl, xu, seed, model_name, environment_name, tries):
         super().__init__(n_var=n_var, n_obj=n_obj, xl=xl, xu=xu)
         self.seed = seed
+        self.model_name = model_name
+        self.environment_name = environment_name
+        self.tries = tries
 
     def _evaluate(self, x, out, *args, **kwargs):
-        out["F"] = objective_function(x, seed=self.seed)
+        out["F"] = objective_function(x, seed=self.seed, model_name=self.model_name, environment_name=self.environment_name, tries=self.tries)
 
 
 """ 
@@ -80,6 +83,7 @@ EVALUATIONS = POPULATION_SIZE * ITERATIONS
 TRIES = 10
 MAX_STAGNMENT = 50
 LAMBDA_DECAY = 0.01
+SIGMA = 0.5
 
 # Evaluation parameters
 SHOW_BEST = False    # Runs the best solution for EVAL_TRIES
@@ -166,8 +170,8 @@ def objective_function(x, model_name = MODEL, environment_name = ENV, tries = TR
         env = gym.make(environment_name, max_episode_steps=MAX_EPISODE_STEPS)
     output_size = get_output_size(environment_name)
     model, n_variables = get_model(output_size)
-    # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    # model.to(device)
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model.to(device)
     if model_name == 'static':
         model.update_weights(torch.Tensor(x))
     elif model_name == 'abcd' or model_name == 'neuromodulated_hb':
@@ -425,6 +429,9 @@ if __name__ == "__main__":
                 print(f'hidden = {HIDDEN_SIZES}, n_variables = {n_variables}, Layers = {len(model.layers)}, Stopping criteria = {STOP_CONDITION}')
 
                 # Instantiate the CMA-ES optimizer
+                # optimizer = CMAES(pop_size=POPULATION_SIZE, sigma=SIGMA, restarts=EVALUATIONS, incpopsize=1, restart_from_best= 'True')
+                # termination = ValueBasedTermination(STOP_CONDITION, EVALUATIONS)
+                # problem = RLtask(n_var=n_variables, n_obj=1, xl=-1, xu=1, seed=seed, model_name=MODEL, environment_name=ENV, tries=TRIES)
                 optimizer = EvolutionaryAlgorithm(n_variables=n_variables, max_iterations=ITERATIONS, population_size=POPULATION_SIZE, max_stagnment=MAX_STAGNMENT, model_name=MODEL, environment_name=ENV, tries=TRIES)
                 start_time = time.time()
                 timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -438,7 +445,14 @@ if __name__ == "__main__":
                 else:
                     # Run optimization
                     best_solution, best_score = optimizer.run(STOP_CONDITION, SEED)
-
+                    # res = minimize(
+                    #     problem,
+                    #     optimizer,
+                    #     termination,
+                    #     seed = SEED,
+                    #     verbose = True
+                    # )
+                    # best_solution, best_score = res.X, res.F
                 
                 print("Best solution:", best_solution)
                 print("Best score:", best_score)
