@@ -402,7 +402,7 @@ class EvolutionaryAlgorithm:
                 self.population[-1].fitness = self.best_individual.fitness
             else:
                 self.update_population()
-            if self.i % 25:
+            if self.i % 25 == 0:
                 print(f'Iteration = {self.i}, Mean fitness = {np.mean([xi.fitness for xi in self.population])}, Best fitness = {self.best_individual.fitness}, Best fitness testing = {self.best_individual.fitness_test}')
             if self.best_individual.fitness <= stop_criteria:
                 print('Stop criteria achieved!')
@@ -424,7 +424,7 @@ if __name__ == "__main__":
     MAX_EPISODE_STEPS, STOP_CONDITION, HIDDEN_SIZES = set_model_and_environment_parameters(ENV, MODEL)
 
     for i, lambd in enumerate(lambdas):
-        for seed in range(30):
+        for seed in range(15, 30):
 
             SEED = seed
 
