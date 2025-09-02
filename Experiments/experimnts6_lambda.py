@@ -56,25 +56,24 @@ ARGUMENTS
 """
 # Experiment parameters
 SEED = None
-READ_DATA = True   # Read data from input_filename
-STORE_DATA = False   # Store data on output_filename
+READ_DATA = False   # Read data from input_filename
+STORE_DATA = True   # Store data on output_filename
 
-# input_filename = 'output_MountainCar-v0_static_2025-01-27_21-10-50.pkl'
-input_filename = 'exp4_output_ea_CartPole-v1_neuromodulated_hb_seed-1_time-2025-05-02_20-52-05_lambda_0-1.pkl'
+input_filename = 'output_MountainCar-v0_static_2025-01-27_21-10-50.pkl'
 
 # Model options
 MODEL_NUMBER = 0
 MODELS = []
-MODELS.append('abcd')
+# MODELS.append('abcd')
 MODELS.append('neuromodulated_hb')
-MODELS.append('static')
+# MODELS.append('static')
 
 # Environment options
-ENV_NUMBER = 3
+ENV_NUMBER = 0
 ENVIRONMENTS = []
-ENVIRONMENTS.append('MountainCar-v0')
-ENVIRONMENTS.append('LunarLander-v3')
-ENVIRONMENTS.append('CartPole-v1')
+# ENVIRONMENTS.append('MountainCar-v0')
+# ENVIRONMENTS.append('LunarLander-v3')
+# ENVIRONMENTS.append('CartPole-v1')
 ENVIRONMENTS.append('Acrobot-v1')
 
 # Optimisation parameters
@@ -87,8 +86,8 @@ LAMBDA_DECAY = 0.01
 SIGMA = 0.5
 
 # Evaluation parameters
-SHOW_BEST = True    # Runs the best solution for EVAL_TRIES
-EVAL_TRIES = 1
+SHOW_BEST = False    # Runs the best solution for EVAL_TRIES
+EVAL_TRIES = 100
 
 """
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -412,7 +411,7 @@ if __name__ == "__main__":
     for ENV in ENVIRONMENTS:
         for MODEL in MODELS:
             MAX_EPISODE_STEPS, STOP_CONDITION, HIDDEN_SIZES = set_model_and_environment_parameters(ENV, MODEL)
-            for seed in range(1):
+            for seed in range(30):
 
                 SEED = seed
 
@@ -440,7 +439,7 @@ if __name__ == "__main__":
                 print(f'Optimisation started at {timestamp}.')
 
                 if READ_DATA:
-                    with open(f'Experiments/Results/gecco25_gc/{input_filename}', 'rb') as file:
+                    with open(f'Experiments/Results/{input_filename}', 'rb') as file:
                         data = pickle.load(file)
                     best_solution = data['best_solution']
                     best_score = data['best_score']
@@ -466,7 +465,7 @@ if __name__ == "__main__":
                 # Store experiment data
                 if STORE_DATA and not READ_DATA:
                     timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-                    output_filename = f'Experiments/Results/exp4_july_ea/exp4_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}_lambda_{1/LAMBDA_DECAY}.pkl'
+                    output_filename = f'Experiments/Results/exp6_july_ea/exp6_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}_lambda_{1/LAMBDA_DECAY}.pkl'
                     output = {'best_solution': best_solution,
                             'best_score': best_score,
                             'hidden_size': HIDDEN_SIZES,
@@ -478,7 +477,7 @@ if __name__ == "__main__":
                     with open(output_filename, 'wb') as file:
                         pickle.dump(output, file)
 
-                    log_file = f'Experiments/Results/exp4_july_ea/experiments_log.csv'
+                    log_file = f'Experiments/Results/exp6_july_ea/experiments_log.csv'
                     new_line = {
                         'filename' : output_filename,
                         'algorithm' : 'EA',

@@ -54,19 +54,23 @@ ARGUMENTS
 # Experiment parameters
 SEED = None
 READ_DATA = False   # Read data from input_filename
-STORE_DATA = True   # Store data on output_filename
+STORE_DATA = False   # Store data on output_filename
 
-input_filename = 'output_MountainCar-v0_static_2025-01-27_21-10-50.pkl'
+# input_filename = 'output_MountainCar-v0_static_2025-01-27_21-10-50.pkl'
+# input_filename = 'exp4_output_ea_CartPole-v1_neuromodulated_hb_seed-1_time-2025-03-23_16-47-04.pkl'
+# input_filename = 'exp4_output_ea_MountainCar-v0_neuromodulated_hb_seed-2_time-2025-03-25_11-15-39.pkl'
+# input_filename = 'exp4_output_ea_Acrobot-v1_neuromodulated_hb_seed-1_time-2025-03-28_20-51-31.pkl'
+input_filename = 'exp4_output_ea_LunarLander-v3_static_seed-0_time-2025-08-05_21-40-21_lambda_0-05.pkl'
 
 # Model options
-MODEL_NUMBER = 1
+MODEL_NUMBER = 2
 MODELS = []
 MODELS.append('abcd')
 MODELS.append('neuromodulated_hb')
 MODELS.append('static')
 
 # Environment options
-ENV_NUMBER = 0
+ENV_NUMBER = 1
 ENVIRONMENTS = []
 ENVIRONMENTS.append('MountainCar-v0')
 ENVIRONMENTS.append('LunarLander-v3')
@@ -79,11 +83,11 @@ ITERATIONS = 1000
 EVALUATIONS = POPULATION_SIZE * ITERATIONS
 TRIES = 10
 MAX_STAGNMENT = 50
-LAMBDA_DECAY = 0.01
+LAMBDA_DECAY = 0.05
 
 # Evaluation parameters
 SHOW_BEST = False    # Runs the best solution for EVAL_TRIES
-EVAL_TRIES = 100
+EVAL_TRIES = 10
 
 """
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -131,15 +135,15 @@ def compute_action(env_name, action):
         return int(probs.argmax())
 
 # Get the model and the number of variables
-def get_model(output_size):
-    if MODEL == 'static':
+def get_model(output_size, model_name, env, env_name):
+    if model_name == 'static':
         model = StaticNN(input_size=env.observation_space.shape[0], output_size=output_size, hidden_sizes=HIDDEN_SIZES)
         n_variables = model.get_n_weights()
-    elif MODEL == 'abcd':
-        model =  HebbianAbcdNN(input_size=env.observation_space.shape[0], output_size=output_size, hidden_sizes=HIDDEN_SIZES, env_name=ENV)
+    elif model_name == 'abcd':
+        model =  HebbianAbcdNN(input_size=env.observation_space.shape[0], output_size=output_size, hidden_sizes=HIDDEN_SIZES, env_name=env_name)
         n_variables = model.get_n_weights() * 5
-    elif MODEL == 'neuromodulated_hb':
-        model =  TimeBasedNeuromodulatedHebbianNN(input_size=env.observation_space.shape[0], output_size=output_size, hidden_sizes=HIDDEN_SIZES, env_name=ENV, lambda_decay=0.001)
+    elif model_name == 'neuromodulated_hb':
+        model =  TimeBasedNeuromodulatedHebbianNN(input_size=env.observation_space.shape[0], output_size=output_size, hidden_sizes=HIDDEN_SIZES, env_name=env_name, lambda_decay=LAMBDA_DECAY)
         n_variables = model.get_n_weights() * 5
     else:
         raise ValueError('Model not found.')
@@ -159,13 +163,16 @@ def get_output_size(env):
 OBJECTIVE FUNCTION
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 """
-def objective_function(x, model_name = MODEL, environment_name = ENV, tries = TRIES, show=False, seed = None):
+def objective_function(x, model_name = MODEL, environment_name = ENV, tries = TRIES, show=False, seed = None, max_episode_steps = MAX_EPISODE_STEPS):
+    max_episode_steps, STOP_CONDITION, HIDDEN_SIZES = set_model_and_environment_parameters(environment_name, model_name)
     if show:
-        env = gym.make(environment_name, render_mode="human", max_episode_steps=MAX_EPISODE_STEPS)
+        tmp_env = gym.make(environment_name, render_mode="rgb_array", max_episode_steps=max_episode_steps)
+        env = gym.wrappers.RecordVideo(env=tmp_env, name_prefix="test-video", video_folder='Experiments/Results/test_july/')
+
     else:
-        env = gym.make(environment_name, max_episode_steps=MAX_EPISODE_STEPS)
+        env = gym.make(environment_name, max_episode_steps=max_episode_steps)
     output_size = get_output_size(environment_name)
-    model, n_variables = get_model(output_size)
+    model, n_variables = get_model(output_size, model_name, env, environment_name)
     # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     # model.to(device)
     if model_name == 'static':
@@ -184,15 +191,17 @@ def objective_function(x, model_name = MODEL, environment_name = ENV, tries = TR
             else:
                 observation, info = env.reset()
             episode_over = False
+            # env.start_recording(video_name=f'{environment_name}_{model_name}_seed{seed+i}')
             while not episode_over:
                 action = model.forward(torch.Tensor(observation))
-                action = compute_action(ENV, action)
+                action = compute_action(environment_name, action)
                 action_record.append(action)
                 observation, reward, terminated, truncated, info = env.step(action)
                 episode_over = terminated or truncated
                 result[i] += reward
             if environment_name == 'MountainCar-v0' and truncated == True:
                 result[i] += -200
+    # env.stop_recording()
     env.close()
     # print(np.array(action_record).mean())
     return -np.sum(result)
@@ -393,7 +402,8 @@ class EvolutionaryAlgorithm:
                 self.population[-1].fitness = self.best_individual.fitness
             else:
                 self.update_population()
-            print(f'Iteration = {self.i}, Mean fitness = {np.mean([xi.fitness for xi in self.population])}, Best fitness = {self.best_individual.fitness}, Best fitness testing = {self.best_individual.fitness_test}')
+            if self.i % 25:
+                print(f'Iteration = {self.i}, Mean fitness = {np.mean([xi.fitness for xi in self.population])}, Best fitness = {self.best_individual.fitness}, Best fitness testing = {self.best_individual.fitness_test}')
             if self.best_individual.fitness <= stop_criteria:
                 print('Stop criteria achieved!')
                 break
@@ -408,7 +418,7 @@ MAIN FUNCTION
 if __name__ == "__main__":
 
     MAX_EPISODE_STEPS, STOP_CONDITION, HIDDEN_SIZES = set_model_and_environment_parameters(ENV, MODEL)
-    for seed in range(6, 8):
+    for seed in range(1):
 
         SEED = seed
 
@@ -421,7 +431,7 @@ if __name__ == "__main__":
 
         env = gym.make(ENV, render_mode="human", max_episode_steps=MAX_EPISODE_STEPS)
         output_size = get_output_size(ENV)
-        model, n_variables = get_model(output_size)
+        model, n_variables = get_model(output_size, MODEL, env, ENV)
         print(f'MODEL = {MODEL}, ENVIRONMENT = {ENV}')
         print(f'hidden = {HIDDEN_SIZES}, n_variables = {n_variables}, Layers = {len(model.layers)}, Stopping criteria = {STOP_CONDITION}')
 
@@ -432,7 +442,7 @@ if __name__ == "__main__":
         print(f'Optimisation started at {timestamp}.')
 
         if READ_DATA:
-            with open(f'Experiments/Results/{input_filename}', 'rb') as file:
+            with open(f'Experiments/Results/test_july/{input_filename}', 'rb') as file:
                 data = pickle.load(file)
             best_solution = data['best_solution']
             best_score = data['best_score']
@@ -445,15 +455,17 @@ if __name__ == "__main__":
         print("Best score:", best_score)
 
         # Show best solution
-        total_reward = objective_function(best_solution, tries = EVAL_TRIES, show=SHOW_BEST, seed=1996, model_name=MODEL, environment_name=ENV)
+        # total_reward = objective_function(best_solution, tries = EVAL_TRIES, show=SHOW_BEST, seed=1996, model_name=MODEL, environment_name=ENV)
+        total_reward = objective_function(best_solution, tries = EVAL_TRIES, show=SHOW_BEST, seed=0, model_name=MODEL, environment_name=ENV)
         print(f'Evaluation total reward {total_reward}')
 
         # Store experiment data
         if STORE_DATA and not READ_DATA:
             timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-            output_filename = f'Experiments/Results/gecco25_gc/exp4_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}.pkl'
+            output_filename = f'Experiments/Results/test_july/exp4_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}_lambda_0-05.pkl'
             output = {'best_solution': best_solution,
                     'best_score': best_score,
+                    'evaluation_score' : total_reward,
                     'hidden_size': HIDDEN_SIZES,
                     'population_size': POPULATION_SIZE,
                     'max_iterations': ITERATIONS,
@@ -463,7 +475,7 @@ if __name__ == "__main__":
             with open(output_filename, 'wb') as file:
                 pickle.dump(output, file)
 
-            log_file = f'Experiments/experiments_log.csv'
+            log_file = f'Experiments/Results/test_july/experiments_log.csv'
             new_line = {
                 'filename' : output_filename,
                 'algorithm' : 'EA',

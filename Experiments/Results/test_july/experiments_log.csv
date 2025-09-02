@@ -1,0 +1,2 @@
+filename,algorithm,environment,model,seed,population_size,max_iterations,n_iterations,best_score,hidden_size,n_variables,max_stagnment,lambda_decay,tries,evaluation_score,eval_tries,time
+Experiments/Results/test_july/exp4_output_ea_LunarLander-v3_static_seed-0_time-2025-08-05_21-40-21_lambda_0-05.pkl,EA,LunarLander-v3,static,0,100,1000,326,-2079.773289934028,"[64, 32]",2688,50,0.05,10,6227.458634677054,100,12828.855895280838

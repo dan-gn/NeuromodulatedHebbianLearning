@@ -1,4 +1,3 @@
-
 """ 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 Import required libraries and functions
@@ -31,22 +30,19 @@ from Models.neuromodulated_hb import TimeBasedNeuromodulatedHebbianNN
 
 from experiments_log import append_line_to_csv
 
-from pymoo.algorithms.soo.nonconvex.cmaes import CMAES
+# from pymoo.algorithms.soo.nonconvex.cmaes import CMAES
 from pymoo.optimize import minimize
 from Utils.pymoo_utils import ValueBasedTermination
 from pymoo.core.problem import ElementwiseProblem
 
 class RLtask(ElementwiseProblem):
 
-    def __init__(self, n_var, n_obj, xl, xu, seed, model_name, environment_name, tries):
+    def __init__(self, n_var, n_obj, xl, xu, seed):
         super().__init__(n_var=n_var, n_obj=n_obj, xl=xl, xu=xu)
         self.seed = seed
-        self.model_name = model_name
-        self.environment_name = environment_name
-        self.tries = tries
 
     def _evaluate(self, x, out, *args, **kwargs):
-        out["F"] = objective_function(x, seed=self.seed, model_name=self.model_name, environment_name=self.environment_name, tries=self.tries)
+        out["F"] = objective_function(x, seed=self.seed)
 
 
 """ 
@@ -56,21 +52,24 @@ ARGUMENTS
 """
 # Experiment parameters
 SEED = None
-READ_DATA = True   # Read data from input_filename
-STORE_DATA = False   # Store data on output_filename
+READ_DATA = False   # Read data from input_filename
+STORE_DATA = True   # Store data on output_filename
 
 # input_filename = 'output_MountainCar-v0_static_2025-01-27_21-10-50.pkl'
-input_filename = 'exp4_output_ea_CartPole-v1_neuromodulated_hb_seed-1_time-2025-05-02_20-52-05_lambda_0-1.pkl'
+# input_filename = 'exp4_output_ea_CartPole-v1_neuromodulated_hb_seed-1_time-2025-03-23_16-47-04.pkl'
+# input_filename = 'exp4_output_ea_MountainCar-v0_neuromodulated_hb_seed-2_time-2025-03-25_11-15-39.pkl'
+# input_filename = 'exp4_output_ea_Acrobot-v1_neuromodulated_hb_seed-1_time-2025-03-28_20-51-31.pkl'
+input_filename = 'exp4_output_ea_LunarLander-v3_static_seed-0_time-2025-08-05_21-40-21_lambda_0-05.pkl'
 
 # Model options
-MODEL_NUMBER = 0
+MODEL_NUMBER = 1
 MODELS = []
 MODELS.append('abcd')
 MODELS.append('neuromodulated_hb')
 MODELS.append('static')
 
 # Environment options
-ENV_NUMBER = 3
+ENV_NUMBER = 2
 ENVIRONMENTS = []
 ENVIRONMENTS.append('MountainCar-v0')
 ENVIRONMENTS.append('LunarLander-v3')
@@ -83,12 +82,11 @@ ITERATIONS = 1000
 EVALUATIONS = POPULATION_SIZE * ITERATIONS
 TRIES = 10
 MAX_STAGNMENT = 50
-LAMBDA_DECAY = 0.01
-SIGMA = 0.5
+LAMBDA_DECAY = 0.05
 
 # Evaluation parameters
-SHOW_BEST = True    # Runs the best solution for EVAL_TRIES
-EVAL_TRIES = 1
+SHOW_BEST = False    # Runs the best solution for EVAL_TRIES
+EVAL_TRIES = 100
 
 """
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -136,15 +134,15 @@ def compute_action(env_name, action):
         return int(probs.argmax())
 
 # Get the model and the number of variables
-def get_model(output_size, env):
-    if MODEL == 'static':
+def get_model(output_size, model_name, env, env_name, lambda_value):
+    if model_name == 'static':
         model = StaticNN(input_size=env.observation_space.shape[0], output_size=output_size, hidden_sizes=HIDDEN_SIZES)
         n_variables = model.get_n_weights()
-    elif MODEL == 'abcd':
-        model =  HebbianAbcdNN(input_size=env.observation_space.shape[0], output_size=output_size, hidden_sizes=HIDDEN_SIZES, env_name=ENV)
+    elif model_name == 'abcd':
+        model =  HebbianAbcdNN(input_size=env.observation_space.shape[0], output_size=output_size, hidden_sizes=HIDDEN_SIZES, env_name=env_name)
         n_variables = model.get_n_weights() * 5
-    elif MODEL == 'neuromodulated_hb':
-        model =  TimeBasedNeuromodulatedHebbianNN(input_size=env.observation_space.shape[0], output_size=output_size, hidden_sizes=HIDDEN_SIZES, env_name=ENV, lambda_decay=0.001)
+    elif model_name == 'neuromodulated_hb':
+        model =  TimeBasedNeuromodulatedHebbianNN(input_size=env.observation_space.shape[0], output_size=output_size, hidden_sizes=HIDDEN_SIZES, env_name=env_name, lambda_decay=lambda_value)
         n_variables = model.get_n_weights() * 5
     else:
         raise ValueError('Model not found.')
@@ -164,15 +162,18 @@ def get_output_size(env):
 OBJECTIVE FUNCTION
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 """
-def objective_function(x, model_name = MODEL, environment_name = ENV, tries = TRIES, show=False, seed = None):
+def objective_function(x, model_name = MODEL, environment_name = ENV, tries = TRIES, show=False, seed = None, max_episode_steps = MAX_EPISODE_STEPS, lambda_value=LAMBDA_DECAY):
+    max_episode_steps, STOP_CONDITION, HIDDEN_SIZES = set_model_and_environment_parameters(environment_name, model_name)
     if show:
-        env = gym.make(environment_name, render_mode="human", max_episode_steps=MAX_EPISODE_STEPS)
+        tmp_env = gym.make(environment_name, render_mode="rgb_array", max_episode_steps=max_episode_steps)
+        env = gym.wrappers.RecordVideo(env=tmp_env, name_prefix="test-video", video_folder='Experiments/Results/test_july/')
+
     else:
-        env = gym.make(environment_name, max_episode_steps=MAX_EPISODE_STEPS)
+        env = gym.make(environment_name, max_episode_steps=max_episode_steps)
     output_size = get_output_size(environment_name)
-    model, n_variables = get_model(output_size, env)
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model.to(device)
+    model, n_variables = get_model(output_size, model_name, env, environment_name, lambda_value)
+    # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    # model.to(device)
     if model_name == 'static':
         model.update_weights(torch.Tensor(x))
     elif model_name == 'abcd' or model_name == 'neuromodulated_hb':
@@ -189,15 +190,17 @@ def objective_function(x, model_name = MODEL, environment_name = ENV, tries = TR
             else:
                 observation, info = env.reset()
             episode_over = False
+            # env.start_recording(video_name=f'{environment_name}_{model_name}_seed{seed+i}')
             while not episode_over:
                 action = model.forward(torch.Tensor(observation))
-                action = compute_action(ENV, action)
+                action = compute_action(environment_name, action)
                 action_record.append(action)
                 observation, reward, terminated, truncated, info = env.step(action)
                 episode_over = terminated or truncated
                 result[i] += reward
             if environment_name == 'MountainCar-v0' and truncated == True:
                 result[i] += -200
+    # env.stop_recording()
     env.close()
     # print(np.array(action_record).mean())
     return -np.sum(result)
@@ -217,6 +220,7 @@ class Individual:
         self.n_variables = n_variables
         self.genotype = genotype
         self.fitness = fitness
+        self.fitness_test = None
         self.initial_value_range = 5 # +- initial_value_range
 
     def random_initialise(self):
@@ -224,7 +228,7 @@ class Individual:
 
 class EvolutionaryAlgorithm:
 
-    def __init__(self, n_variables, max_iterations, population_size, max_stagnment, model_name, environment_name, tries):
+    def __init__(self, n_variables, max_iterations, population_size, max_stagnment, model_name, environment_name, tries, lambda_value):
         self.max_iterations = max_iterations
         self.population_size = population_size
         self.n_variables = n_variables
@@ -238,6 +242,7 @@ class EvolutionaryAlgorithm:
         self.model_name = model_name
         self.environment_name = environment_name
         self.tries = tries
+        self.lambda_value = lambda_value
 
     def init_best_individual(self):
         self.best_individual = Individual(self.n_variables)
@@ -247,10 +252,11 @@ class EvolutionaryAlgorithm:
         population = [Individual(self.n_variables) for _ in range(self.population_size)]
         for i, member in enumerate(population):
             population[i].random_initialise()
-            population[i].fitness = objective_function(member.genotype, seed = self.seed, model_name=self.model_name, environment_name=self.environment_name, tries=self.tries)
+            population[i].fitness = objective_function(member.genotype, seed = self.seed, model_name=self.model_name, environment_name=self.environment_name, tries=self.tries, lambda_value=self.lambda_value)
             if population[i].fitness < self.best_individual.fitness:
                 self.best_individual.genotype = population[i].genotype
                 self.best_individual.fitness = population[i].fitness
+                self.best_individual.fitness_test = objective_function(self.best_individual.genotype, seed = 1996, model_name=self.model_name, environment_name=self.environment_name, tries=100, lambda_value=self.lambda_value) 
         return population
 
     def roulette_wheel(self, p):
@@ -317,6 +323,7 @@ class EvolutionaryAlgorithm:
         if offspring[0].fitness < self.best_individual.fitness:
             self.best_individual.genotype = offspring[0].genotype
             self.best_individual.fitness = offspring[0].fitness
+            self.best_individual.fitness_test = objective_function(self.best_individual.genotype, seed = 1996, model_name=self.model_name, environment_name=self.environment_name, tries=100, lambda_value=self.lambda_value) 
             self.stagnment_iterations = -1
         self.stagnment_iterations += 1
 
@@ -341,10 +348,10 @@ class EvolutionaryAlgorithm:
         for p in parents:
             genotype1, genotype2 = self.sbx(p)
             mutated_g1 = self.mutate(genotype1)
-            fitness_g1 = objective_function(mutated_g1, seed = self.seed, model_name=self.model_name, environment_name=self.environment_name, tries=self.tries)
+            fitness_g1 = objective_function(mutated_g1, seed = self.seed, model_name=self.model_name, environment_name=self.environment_name, tries=self.tries, lambda_value=self.lambda_value)
             offspring.append(Individual(self.n_variables, genotype=mutated_g1, fitness=fitness_g1))
             mutated_g2 = self.mutate(genotype2)
-            fitness_g2 = objective_function(mutated_g2, seed = self.seed, model_name=self.model_name, environment_name=self.environment_name, tries=self.tries)
+            fitness_g2 = objective_function(mutated_g2, seed = self.seed, model_name=self.model_name, environment_name=self.environment_name, tries=self.tries, lambda_value=self.lambda_value)
             offspring.append(Individual(self.n_variables, genotype=mutated_g2, fitness=fitness_g2))
         return offspring
     
@@ -357,7 +364,7 @@ class EvolutionaryAlgorithm:
 
         # Parallel evaluation of all genotypes
         with ProcessPoolExecutor() as executor:
-            fitnesses = list(executor.map(lambda g: objective_function(g, seed=self.seed, model_name=self.model_name, environment_name=self.environment_name, tries=self.tries), offspring_genotypes))
+            fitnesses = list(executor.map(lambda g: objective_function(g, seed=self.seed, model_name=self.model_name, environment_name=self.environment_name, tries=self.tries, lambda_value=self.lambda_value), offspring_genotypes))
 
         # Build offspring individuals
         offspring = [
@@ -395,12 +402,17 @@ class EvolutionaryAlgorithm:
                 self.population[-1].fitness = self.best_individual.fitness
             else:
                 self.update_population()
-            print(f'Iteration = {self.i}, Mean fitness = {np.mean([xi.fitness for xi in self.population])}, Best fitness = {self.best_individual.fitness}')
+            if self.i % 25:
+                print(f'Iteration = {self.i}, Mean fitness = {np.mean([xi.fitness for xi in self.population])}, Best fitness = {self.best_individual.fitness}, Best fitness testing = {self.best_individual.fitness_test}')
             if self.best_individual.fitness <= stop_criteria:
                 print('Stop criteria achieved!')
                 break
             self.record[self.i + 1] = self.best_individual.fitness
         return self.best_individual.genotype, self.best_individual.fitness
+
+
+lambda_exp = [x/2 for x in range(9)]
+lambdas = [10**(-x) for x in lambda_exp]
 
 """
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -409,94 +421,91 @@ MAIN FUNCTION
 """
 if __name__ == "__main__":
 
-    for ENV in ENVIRONMENTS:
-        for MODEL in MODELS:
-            MAX_EPISODE_STEPS, STOP_CONDITION, HIDDEN_SIZES = set_model_and_environment_parameters(ENV, MODEL)
-            for seed in range(1):
+    MAX_EPISODE_STEPS, STOP_CONDITION, HIDDEN_SIZES = set_model_and_environment_parameters(ENV, MODEL)
 
-                SEED = seed
+    for i, lambd in enumerate(lambdas):
+        for seed in range(30):
 
-                if SEED is not None:
-                    print(f'Seed set to {SEED}.')
-                    torch.manual_seed(SEED)
-                    torch.cuda.manual_seed(SEED)
-                    np.random.seed(SEED)
-                    random.seed(SEED)
+            SEED = seed
 
-                env = gym.make(ENV, render_mode="human", max_episode_steps=MAX_EPISODE_STEPS)
-                output_size = get_output_size(ENV)
-                # model, n_variables = get_model(output_size)
-                model, n_variables = get_model(output_size, MODEL, env, ENV)
-                print(f'MODEL = {MODEL}, ENVIRONMENT = {ENV}')
-                print(f'hidden = {HIDDEN_SIZES}, n_variables = {n_variables}, Layers = {len(model.layers)}, Stopping criteria = {STOP_CONDITION}')
+            if SEED is not None:
+                print(f'Seed set to {SEED}.')
+                torch.manual_seed(SEED)
+                torch.cuda.manual_seed(SEED)
+                np.random.seed(SEED)
+                random.seed(SEED)
 
-                # Instantiate the CMA-ES optimizer
-                # optimizer = CMAES(pop_size=POPULATION_SIZE, sigma=SIGMA, restarts=EVALUATIONS, incpopsize=1, restart_from_best= 'True')
-                # termination = ValueBasedTermination(STOP_CONDITION, EVALUATIONS)
-                # problem = RLtask(n_var=n_variables, n_obj=1, xl=-1, xu=1, seed=seed, model_name=MODEL, environment_name=ENV, tries=TRIES)
-                optimizer = EvolutionaryAlgorithm(n_variables=n_variables, max_iterations=ITERATIONS, population_size=POPULATION_SIZE, max_stagnment=MAX_STAGNMENT, model_name=MODEL, environment_name=ENV, tries=TRIES)
-                start_time = time.time()
+            env = gym.make(ENV, render_mode="human", max_episode_steps=MAX_EPISODE_STEPS)
+            output_size = get_output_size(ENV)
+            model, n_variables = get_model(output_size, MODEL, env, ENV, lambd)
+            print(f'MODEL = {MODEL}, ENVIRONMENT = {ENV}')
+            print(f'hidden = {HIDDEN_SIZES}, n_variables = {n_variables}, Layers = {len(model.layers)}, Stopping criteria = {STOP_CONDITION}')
+
+            # Instantiate the CMA-ES optimizer
+            optimizer = EvolutionaryAlgorithm(n_variables=n_variables, max_iterations=ITERATIONS, population_size=POPULATION_SIZE, max_stagnment=MAX_STAGNMENT, model_name=MODEL, environment_name=ENV, tries=TRIES, lambda_value=lambd)
+            start_time = time.time()
+            timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            print(f'Optimisation started at {timestamp}.')
+
+            if READ_DATA:
+                with open(f'Experiments/Results/test_july/{input_filename}', 'rb') as file:
+                    data = pickle.load(file)
+                best_solution = data['best_solution']
+                best_score = data['best_score']
+            else:
+                # Run optimization
+                best_solution, best_score = optimizer.run(STOP_CONDITION, SEED)
+
+            
+            print("Best solution:", best_solution)
+            print("Best score:", best_score)
+
+            # Show best solution
+            # total_reward = objective_function(best_solution, tries = EVAL_TRIES, show=SHOW_BEST, seed=1996, model_name=MODEL, environment_name=ENV)
+            total_reward = objective_function(best_solution, tries = EVAL_TRIES, show=SHOW_BEST, seed=0, model_name=MODEL, environment_name=ENV)
+            print(f'Evaluation total reward {total_reward}')
+
+            # Store experiment data
+            if STORE_DATA and not READ_DATA:
                 timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-                print(f'Optimisation started at {timestamp}.')
-
-                if READ_DATA:
-                    with open(f'Experiments/Results/gecco25_gc/{input_filename}', 'rb') as file:
-                        data = pickle.load(file)
-                    best_solution = data['best_solution']
-                    best_score = data['best_score']
-                else:
-                    # Run optimization
-                    best_solution, best_score = optimizer.run(STOP_CONDITION, SEED)
-                    # res = minimize(
-                    #     problem,
-                    #     optimizer,
-                    #     termination,
-                    #     seed = SEED,
-                    #     verbose = True
-                    # )
-                    # best_solution, best_score = res.X, res.F
-                
-                print("Best solution:", best_solution)
-                print("Best score:", best_score)
-
-                # Show best solution
-                total_reward = objective_function(best_solution, tries = EVAL_TRIES, show=SHOW_BEST, seed=1996, model_name=MODEL, environment_name=ENV)
-                print(f'Evaluation total reward {total_reward}')
-
-                # Store experiment data
-                if STORE_DATA and not READ_DATA:
-                    timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-                    output_filename = f'Experiments/Results/exp4_july_ea/exp4_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}_lambda_{1/LAMBDA_DECAY}.pkl'
-                    output = {'best_solution': best_solution,
-                            'best_score': best_score,
-                            'hidden_size': HIDDEN_SIZES,
-                            'population_size': POPULATION_SIZE,
-                            'max_iterations': ITERATIONS,
-                            'n_iterations' : optimizer.i,
-                            'record' : optimizer.record, 
-                            'seed': SEED}
-                    with open(output_filename, 'wb') as file:
-                        pickle.dump(output, file)
-
-                    log_file = f'Experiments/Results/exp4_july_ea/experiments_log.csv'
-                    new_line = {
-                        'filename' : output_filename,
-                        'algorithm' : 'EA',
-                        'environment' : ENV,
-                        'model' : MODEL,
-                        'seed' : SEED,
-                        'population_size': POPULATION_SIZE,
-                        'max_iterations': ITERATIONS,
-                        'n_iterations' : optimizer.i,
-                        'best_score' : best_score, 
-                        'hidden_size' : str(HIDDEN_SIZES),
-                        'n_variables' : n_variables,
-                        'max_stagnment' : MAX_STAGNMENT,
-                        'lambda_decay' : LAMBDA_DECAY,
-                        'tries' : TRIES,
-                        'evaluation_score' : total_reward,
-                        'eval_tries' : EVAL_TRIES,
-                        'time' : time.time() - start_time
+                output_filename = f'Experiments/Results/test_sept/exp7_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}_lambda_{i}.pkl'
+                output = {
+                    'best_solution': best_solution,
+                    'best_score': best_score,
+                    'evaluation_score' : total_reward,
+                    'hidden_size': HIDDEN_SIZES,
+                    'population_size': POPULATION_SIZE,
+                    'max_iterations': ITERATIONS,
+                    'n_iterations' : optimizer.i,
+                    'record' : optimizer.record, 
+                    'lambda_decay' : lambd,
+                    'lambda_exp' : lambda_exp[i],
+                    'seed': SEED
                     }
-                    append_line_to_csv(log_file, new_line)
+                with open(output_filename, 'wb') as file:
+                    pickle.dump(output, file)
+
+                log_file = f'Experiments/Results/test_sept/experiments_log.csv'
+                new_line = {
+                    'filename' : output_filename,
+                    'algorithm' : 'EA',
+                    'environment' : ENV,
+                    'model' : MODEL,
+                    'seed' : SEED,
+                    'population_size': POPULATION_SIZE,
+                    'max_iterations': ITERATIONS,
+                    'n_iterations' : optimizer.i,
+                    'best_score' : best_score, 
+                    'hidden_size' : str(HIDDEN_SIZES),
+                    'n_variables' : n_variables,
+                    'max_stagnment' : MAX_STAGNMENT,
+                    'lambda_decay' : lambd,
+                    'lambda_exp' : lambda_exp[i],
+                    'tries' : TRIES,
+                    'evaluation_score' : total_reward,
+                    'eval_tries' : EVAL_TRIES,
+                    'time' : time.time() - start_time
+                    }
+                append_line_to_csv(log_file, new_line)
+
 
