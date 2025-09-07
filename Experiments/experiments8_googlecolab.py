@@ -411,7 +411,7 @@ class EvolutionaryAlgorithm:
         return self.best_individual.genotype, self.best_individual.fitness
 
 
-lambda_exp = [x/2 for x in range(0, 9)]
+lambda_exp = [x/2 for x in range(8, -1, -1)]
 lambdas = [10**(-x) for x in lambda_exp]
 
 """
@@ -424,7 +424,7 @@ if __name__ == "__main__":
     MAX_EPISODE_STEPS, STOP_CONDITION, HIDDEN_SIZES = set_model_and_environment_parameters(ENV, MODEL)
 
     for i, lambd in enumerate(lambdas):
-        for seed in range(15, 30):
+        for seed in range(0, 30):
 
             SEED = seed
 
@@ -468,7 +468,7 @@ if __name__ == "__main__":
             # Store experiment data
             if STORE_DATA and not READ_DATA:
                 timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-                output_filename = f'/content/drive/AICS/Experiments/Results/test_sept/exp7_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}_lambda_{i}.pkl'
+                output_filename = f'../drive/MyDrive/AICS/Experiments/Results/test_sept/exp7_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}_lambda_{i}.pkl'
                 output = {
                     'best_solution': best_solution,
                     'best_score': best_score,
@@ -485,7 +485,7 @@ if __name__ == "__main__":
                 with open(output_filename, 'wb') as file:
                     pickle.dump(output, file)
 
-                log_file = f'/content/drive/AICS/Experiments/Results/test_sept/experiments_log.csv'
+                log_file = f'../drive/MyDrive/AICS/Experiments/Results/test_sept/experiments_log.csv'
                 new_line = {
                     'filename' : output_filename,
                     'algorithm' : 'EA',
