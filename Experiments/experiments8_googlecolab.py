@@ -438,7 +438,7 @@ if __name__ == "__main__":
             env = gym.make(ENV, render_mode="human", max_episode_steps=MAX_EPISODE_STEPS)
             output_size = get_output_size(ENV)
             model, n_variables = get_model(output_size, MODEL, env, ENV, lambd)
-            print(f'MODEL = {MODEL}, ENVIRONMENT = {ENV}')
+            print(f'MODEL = {MODEL}, ENVIRONMENT = {ENV}, LAMBDA = {lambda_exp[i]}')
             print(f'hidden = {HIDDEN_SIZES}, n_variables = {n_variables}, Layers = {len(model.layers)}, Stopping criteria = {STOP_CONDITION}')
 
             # Instantiate the CMA-ES optimizer
