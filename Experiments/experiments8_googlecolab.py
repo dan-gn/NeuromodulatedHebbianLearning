@@ -468,7 +468,7 @@ if __name__ == "__main__":
             # Store experiment data
             if STORE_DATA and not READ_DATA:
                 timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-                output_filename = f'../drive/MyDrive/AICS/Experiments/Results/test_sept/exp7_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}_lambda_{i}.pkl'
+                output_filename = f'../drive/MyDrive/AICS/Experiments/Results/test_sept/exp7_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}_lambda_{lambda_exp[i]}.pkl'
                 output = {
                     'best_solution': best_solution,
                     'best_score': best_score,
