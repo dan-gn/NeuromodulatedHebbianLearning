@@ -62,14 +62,14 @@ STORE_DATA = True   # Store data on output_filename
 input_filename = 'exp4_output_ea_LunarLander-v3_static_seed-0_time-2025-08-05_21-40-21_lambda_0-05.pkl'
 
 # Model options
-MODEL_NUMBER = 1
+MODEL_NUMBER = 0
 MODELS = []
 MODELS.append('abcd')
 MODELS.append('neuromodulated_hb')
 MODELS.append('static')
 
 # Environment options
-ENV_NUMBER = 2
+ENV_NUMBER = 0
 ENVIRONMENTS = []
 ENVIRONMENTS.append('MountainCar-v0')
 ENVIRONMENTS.append('LunarLander-v3')
@@ -77,7 +77,7 @@ ENVIRONMENTS.append('CartPole-v1')
 ENVIRONMENTS.append('Acrobot-v1')
 
 # Optimisation parameters
-POPULATION_SIZE = 50
+POPULATION_SIZE = 100
 ITERATIONS = 1000
 EVALUATIONS = POPULATION_SIZE * ITERATIONS
 TRIES = 10
@@ -256,7 +256,7 @@ class EvolutionaryAlgorithm:
             if population[i].fitness < self.best_individual.fitness:
                 self.best_individual.genotype = population[i].genotype
                 self.best_individual.fitness = population[i].fitness
-                self.best_individual.fitness_test = objective_function(self.best_individual.genotype, seed = 1996, model_name=self.model_name, environment_name=self.environment_name, tries=100, lambda_value=self.lambda_value) 
+                # self.best_individual.fitness_test = objective_function(self.best_individual.genotype, seed = 1996, model_name=self.model_name, environment_name=self.environment_name, tries=100, lambda_value=self.lambda_value) 
         return population
 
     def roulette_wheel(self, p):
@@ -323,7 +323,7 @@ class EvolutionaryAlgorithm:
         if offspring[0].fitness < self.best_individual.fitness:
             self.best_individual.genotype = offspring[0].genotype
             self.best_individual.fitness = offspring[0].fitness
-            self.best_individual.fitness_test = objective_function(self.best_individual.genotype, seed = 1996, model_name=self.model_name, environment_name=self.environment_name, tries=100, lambda_value=self.lambda_value) 
+            # self.best_individual.fitness_test = objective_function(self.best_individual.genotype, seed = 1996, model_name=self.model_name, environment_name=self.environment_name, tries=100, lambda_value=self.lambda_value) 
             self.stagnment_iterations = -1
         self.stagnment_iterations += 1
 
@@ -411,7 +411,7 @@ class EvolutionaryAlgorithm:
         return self.best_individual.genotype, self.best_individual.fitness
 
 
-lambda_exp = [x/2 for x in range(9)]
+lambda_exp = [x/2 for x in range(0, 1)]
 lambdas = [10**(-x) for x in lambda_exp]
 
 """
@@ -424,7 +424,7 @@ if __name__ == "__main__":
     MAX_EPISODE_STEPS, STOP_CONDITION, HIDDEN_SIZES = set_model_and_environment_parameters(ENV, MODEL)
 
     for i, lambd in enumerate(lambdas):
-        for seed in range(15, 30):
+        for seed in range(0, 15):
 
             SEED = seed
 
@@ -438,7 +438,7 @@ if __name__ == "__main__":
             env = gym.make(ENV, render_mode="human", max_episode_steps=MAX_EPISODE_STEPS)
             output_size = get_output_size(ENV)
             model, n_variables = get_model(output_size, MODEL, env, ENV, lambd)
-            print(f'MODEL = {MODEL}, ENVIRONMENT = {ENV}')
+            print(f'MODEL = {MODEL}, ENVIRONMENT = {ENV}, LAMBDA = {lambda_exp[i]}')
             print(f'hidden = {HIDDEN_SIZES}, n_variables = {n_variables}, Layers = {len(model.layers)}, Stopping criteria = {STOP_CONDITION}')
 
             # Instantiate the CMA-ES optimizer
@@ -461,14 +461,14 @@ if __name__ == "__main__":
             print("Best score:", best_score)
 
             # Show best solution
-            # total_reward = objective_function(best_solution, tries = EVAL_TRIES, show=SHOW_BEST, seed=1996, model_name=MODEL, environment_name=ENV)
-            total_reward = objective_function(best_solution, tries = EVAL_TRIES, show=SHOW_BEST, seed=0, model_name=MODEL, environment_name=ENV)
+            total_reward = objective_function(best_solution, tries = EVAL_TRIES, show=SHOW_BEST, seed=1996, model_name=MODEL, environment_name=ENV)
+            # total_reward = objective_function(best_solution, tries = EVAL_TRIES, show=SHOW_BEST, seed=0, model_name=MODEL, environment_name=ENV)
             print(f'Evaluation total reward {total_reward}')
 
             # Store experiment data
             if STORE_DATA and not READ_DATA:
                 timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-                output_filename = f'Experiments/Results/test_sept/exp7_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}_lambda_{i}.pkl'
+                output_filename = f'Experiments/Results/test_sept/exp7_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}_lambda_{lambda_exp[i]}.pkl'
                 output = {
                     'best_solution': best_solution,
                     'best_score': best_score,

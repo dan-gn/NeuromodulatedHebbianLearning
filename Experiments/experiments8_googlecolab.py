@@ -77,7 +77,7 @@ ENVIRONMENTS.append('CartPole-v1')
 ENVIRONMENTS.append('Acrobot-v1')
 
 # Optimisation parameters
-POPULATION_SIZE = 50
+POPULATION_SIZE = 100
 ITERATIONS = 1000
 EVALUATIONS = POPULATION_SIZE * ITERATIONS
 TRIES = 10
@@ -411,7 +411,7 @@ class EvolutionaryAlgorithm:
         return self.best_individual.genotype, self.best_individual.fitness
 
 
-lambda_exp = [x/2 for x in range(8, -1, -1)]
+lambda_exp = [x/2 for x in range(0, 9)]
 lambdas = [10**(-x) for x in lambda_exp]
 
 """
@@ -485,7 +485,7 @@ if __name__ == "__main__":
                 with open(output_filename, 'wb') as file:
                     pickle.dump(output, file)
 
-                log_file = f'../drive/MyDrive/AICS/Experiments/Results/test_sept/experiments_log.csv'
+                log_file = f'../drive/MyDrive/AICS/Experiments/Results/test_sept/experiments_log_colab.csv'
                 new_line = {
                     'filename' : output_filename,
                     'algorithm' : 'EA',
