@@ -461,8 +461,8 @@ if __name__ == "__main__":
             print("Best score:", best_score)
 
             # Show best solution
-            # total_reward = objective_function(best_solution, tries = EVAL_TRIES, show=SHOW_BEST, seed=1996, model_name=MODEL, environment_name=ENV)
-            total_reward = objective_function(best_solution, tries = EVAL_TRIES, show=SHOW_BEST, seed=0, model_name=MODEL, environment_name=ENV)
+            total_reward = objective_function(best_solution, tries = EVAL_TRIES, show=SHOW_BEST, seed=1996, model_name=MODEL, environment_name=ENV)
+            # total_reward = objective_function(best_solution, tries = EVAL_TRIES, show=SHOW_BEST, seed=0, model_name=MODEL, environment_name=ENV)
             print(f'Evaluation total reward {total_reward}')
 
             # Store experiment data
