@@ -475,7 +475,7 @@ if __name__ == "__main__":
             # Store experiment data
             if STORE_DATA and not READ_DATA:
                 timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-                output_filename = f'Experiments/Results/test_oct/exp7_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}_lambda_{lambda_exp[i]}.pkl'
+                output_filename = f'Experiments/Results/test_nov/exp7_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}_lambda_{lambda_exp[i]}.pkl'
                 output = {
                     'best_solution': best_solution,
                     'best_score': best_score,
@@ -492,7 +492,7 @@ if __name__ == "__main__":
                 with open(output_filename, 'wb') as file:
                     pickle.dump(output, file)
 
-                log_file = f'Experiments/Results/test_oct/experiments_log_100pop.csv'
+                log_file = f'Experiments/Results/test_nov/experiments_log_100pop.csv'
                 new_line = {
                     'filename' : output_filename,
                     'algorithm' : 'EA',
