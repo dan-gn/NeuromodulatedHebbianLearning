@@ -1,0 +1,4 @@
+﻿filename,algorithm,environment,model,seed,population_size,max_iterations,n_iterations,best_score,hidden_size,n_variables,max_stagnment,lambda_decay,lambda_exp,tries,evaluation_score,eval_tries,time
+Experiments/Results/test_sept/exp7_output_ea_MountainCar-v0_neuromodulated_hb_seed-26_time-2025-10-06_07-32-14_lambda_4.0.pkl,EA,MountainCar-v0,neuromodulated_hb,26,50,1000,999,1121,"[64, 32]",11360,50,0.0001,4,10,13423,100,45475.63494
+Experiments/Results/test_sept/exp7_output_ea_MountainCar-v0_neuromodulated_hb_seed-28_time-2025-10-06_08-31-53_lambda_4.0.pkl,EA,MountainCar-v0,neuromodulated_hb,28,50,1000,662,1095,"[64, 32]",11360,50,0.0001,4,10,27068,100,22881.745
+../drive/MyDrive/AICS/Experiments/Results/test_sept/exp7_output_ea_MountainCar-v0_neuromodulated_hb_seed-27_time-2025-10-06_03-19-25_lambda_4.0.pkl,EA,MountainCar-v0,neuromodulated_hb,27,50,1000,999,1150,"[64, 32]",11360,50,0.0001,4,10,18440,100,33669.19462

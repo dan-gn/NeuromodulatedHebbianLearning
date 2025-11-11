@@ -3,14 +3,16 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # environment = 'CartPole-v1'
-environment = 'Acrobot-v1'
+# environment = 'Acrobot-v1'
+environment = 'MountainCar-v0'
 
 # metric = 'best_score'
 # metric = 'evaluation_score'
-metric = 'testing'
+# metric = 'testing'
+metric = 'n_iterations'
 
 # 1. Read the CSV file into a dataframe
-df = pd.read_csv("Experiments/Results/test_sept/experiments_log_v4.csv")
+df = pd.read_csv("Experiments/Results/test_aics/experiments_log_100tries_v1.csv")
 # df = pd.read_csv("final_results_gecco_april2.csv")
 
 # 2. Filter the "environment" column for "CartPole-v1"
@@ -46,6 +48,16 @@ mean_table = (
 print("\nMean values of 'some_metric' by lambda_exp and model:")
 print(mean_table)
 
+# ---- Compute medians ----
+median_table = (
+    df_filtered.groupby(["lambda_exp", "model"])[metric]  # replace with your metric
+    .std()
+    .reset_index()
+)
+
+print("\nMedian values of 'some_metric' by lambda_exp and model:")
+print(median_table)
+
 # Plot with seaborn (colored by model)
 plt.figure(figsize=(10, 6))
 sns.boxplot(
@@ -56,7 +68,7 @@ sns.boxplot(
     palette="Set2"        # you can try "Set1", "Dark2", "Pastel1", "tab10", etc.
 )
 
-plt.title("Boxplot of total reward of each model on CartPole", fontsize=12)
+plt.title(f'Total reward of each model on the testing set of seeds for {environment[:-3]}', fontsize=12)
 # plt.xlabel("$\lambda$", fontsize=12)
 plt.xlabel(" ", fontsize=12)
 plt.ylabel("Total reward", fontsize=12)
@@ -65,11 +77,22 @@ plt.legend(title="Model", fontsize=12)
 # Change tick labels
 # labels = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k']
 # labels = [x/2 for x in range(9)]
-labels = [f'tm-HL $\lambda=${x/2}' for x in range(9)]
+# labels = [str(-(x/2)) for x in range(9)]
+# labels = [['^' + y for y in x] for x in labels]
+# print(labels)
+# labels = ['^-^0', '^-^0^.^5']
+# labels = [f'tm-HL $\lambda=10^[-0.5]$' for x in labels]
+labels = [r"$10^{-0}$", r"$10^{-0.5}$"]
+labels += [r"$10^{-1.0}$", r"$10^{-1.5}$"]
+labels += [r"$10^{-2.0}$", r"$10^{-2.5}$"]
+labels += [r"$10^{-3.0}$", r"$10^{-3.5}$"]
+labels += [r"$10^{-4.0}$"]
+labels = [f'tm-HL $\lambda=${x}' for x in labels]
 labels = ['Fixed-ANN', 'sHL'] + labels
 
 # plt.xticks(range(2, len(labels)+2), labels)
-plt.xticks(range(0, len(labels)), labels, rotation=45)
+plt.xticks(range(0, len(labels)), labels, rotation=45, fontsize=12)
+plt.yticks(fontsize=12)
 
 plt.grid(False)
 plt.tight_layout()

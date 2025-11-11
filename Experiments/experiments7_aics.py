@@ -62,7 +62,7 @@ STORE_DATA = True   # Store data on output_filename
 input_filename = 'exp4_output_ea_LunarLander-v3_static_seed-0_time-2025-08-05_21-40-21_lambda_0-05.pkl'
 
 # Model options
-MODEL_NUMBER = 0
+MODEL_NUMBER = 1
 MODELS = []
 MODELS.append('abcd')
 MODELS.append('neuromodulated_hb')
@@ -256,7 +256,7 @@ class EvolutionaryAlgorithm:
             if population[i].fitness < self.best_individual.fitness:
                 self.best_individual.genotype = population[i].genotype
                 self.best_individual.fitness = population[i].fitness
-                # self.best_individual.fitness_test = objective_function(self.best_individual.genotype, seed = 1996, model_name=self.model_name, environment_name=self.environment_name, tries=100, lambda_value=self.lambda_value) 
+                self.best_individual.fitness_test = objective_function(self.best_individual.genotype, seed = 1996, model_name=self.model_name, environment_name=self.environment_name, tries=100, lambda_value=self.lambda_value) 
         return population
 
     def roulette_wheel(self, p):
@@ -323,7 +323,7 @@ class EvolutionaryAlgorithm:
         if offspring[0].fitness < self.best_individual.fitness:
             self.best_individual.genotype = offspring[0].genotype
             self.best_individual.fitness = offspring[0].fitness
-            # self.best_individual.fitness_test = objective_function(self.best_individual.genotype, seed = 1996, model_name=self.model_name, environment_name=self.environment_name, tries=100, lambda_value=self.lambda_value) 
+            self.best_individual.fitness_test = objective_function(self.best_individual.genotype, seed = 1996, model_name=self.model_name, environment_name=self.environment_name, tries=100, lambda_value=self.lambda_value) 
             self.stagnment_iterations = -1
         self.stagnment_iterations += 1
 
@@ -411,7 +411,7 @@ class EvolutionaryAlgorithm:
         return self.best_individual.genotype, self.best_individual.fitness
 
 
-lambda_exp = [x/2 for x in range(0, 1)]
+lambda_exp = [x/2 for x in range(0, 11)]
 lambdas = [10**(-x) for x in lambda_exp]
 
 """
@@ -424,7 +424,14 @@ if __name__ == "__main__":
     MAX_EPISODE_STEPS, STOP_CONDITION, HIDDEN_SIZES = set_model_and_environment_parameters(ENV, MODEL)
 
     for i, lambd in enumerate(lambdas):
-        for seed in range(0, 15):
+        for seed in range(15, 30):
+
+            if lambd == 9:
+                MODEL = 'abcd'
+            elif lambd == 10:
+                MODEL = 'static'
+            else:
+                MODEL = 'neuromodulated_hb'
 
             SEED = seed
 
@@ -468,7 +475,7 @@ if __name__ == "__main__":
             # Store experiment data
             if STORE_DATA and not READ_DATA:
                 timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-                output_filename = f'Experiments/Results/test_sept/exp7_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}_lambda_{lambda_exp[i]}.pkl'
+                output_filename = f'Experiments/Results/test_oct/exp7_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}_lambda_{lambda_exp[i]}.pkl'
                 output = {
                     'best_solution': best_solution,
                     'best_score': best_score,
@@ -485,7 +492,7 @@ if __name__ == "__main__":
                 with open(output_filename, 'wb') as file:
                     pickle.dump(output, file)
 
-                log_file = f'Experiments/Results/test_sept/experiments_log.csv'
+                log_file = f'Experiments/Results/test_oct/experiments_log_100pop.csv'
                 new_line = {
                     'filename' : output_filename,
                     'algorithm' : 'EA',

@@ -11,6 +11,8 @@ import numpy as np
 import random
 
 SEED = 1996
+eval_tries = 100
+
 def set_seed(seed):
     if SEED is not None:
         # print(f'Seed set to {SEED}.')
@@ -19,14 +21,14 @@ def set_seed(seed):
         np.random.seed(SEED)
         random.seed(SEED)
 
-environment = 'CartPole-v1'
-environment = 'Acrobot-v1'
+# environment = 'CartPole-v1'
+# environment = 'Acrobot-v1'
 
 # metric = 'best_score'
 metric = 'evaluation_score'
 
 # 1. Read the CSV file into a dataframe
-df_filtered = pd.read_csv("Experiments/Results/test_sept/experiments_log_filtered.csv")
+df_filtered = pd.read_csv("Experiments/Results/test_aics/experiments_log_temp.csv")
 
 # 2. Filter the "environment" column for "CartPole-v1"
 # df_filtered = df_filtered[df_filtered["environment"] == environment]
@@ -35,27 +37,31 @@ df_filtered = pd.read_csv("Experiments/Results/test_sept/experiments_log_filtere
 # df_filtered = df_filtered[df_filtered["model"] == "static"]
 df_filtered.loc[df_filtered["model"] == "abcd", "lambda_exp"] = -1
 df_filtered.loc[df_filtered["model"] == "static", "lambda_exp"] = -2
+
 df_filtered['testing'] = None
 
 print(len(df_filtered))
 for i, row in df_filtered.iterrows():
     set_seed(SEED)
-    with open(row['filename'], 'rb') as f:
+    filename = 'Experiments/Results/test_aics/' + row['filename'].split('/')[-1]
+    # print(filename)
+    with open(filename, 'rb') as f:
         x = pickle.load(f)
         best_solution = x['best_solution']
-        print(x['population_size'])
-        eval_tries = 1000
+        # print(x['population_size'])
         model = row['model']
         env = row['environment']
-        # lambda_value = row['lambda_decay']
-        lambda_value = 0.01
+        lambda_value = row['lambda_decay']
+        exp_seed = row['seed']
+        # lambda_value = 0.01
         max_episode_steps, _, _ = set_model_and_environment_parameters(env, model)
         total_reward = objective_function(best_solution, tries = eval_tries, show=False, seed=SEED, model_name=model, environment_name=env, max_episode_steps=max_episode_steps, lambda_value=lambda_value)
         df_filtered.loc[i, 'testing'] = total_reward
-        print(f'{i}: {env} - {model} - {total_reward}')
+        print(f'{i}: {env} - {model} -  {exp_seed} - {total_reward}')
 
     # break
-df_filtered.to_csv('Experiments/Results/test_sept/experiments_log_v4_1000.csv')
+df_filtered.to_csv('Experiments/Results/test_aics/experiments_log_100tries_v1_temp.csv')
+
 
 
 
