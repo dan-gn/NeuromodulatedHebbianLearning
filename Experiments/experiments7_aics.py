@@ -387,6 +387,7 @@ class EvolutionaryAlgorithm:
         self.elitism(offspring)
 
     def run(self, stop_criteria, seed):
+        self.goal_achieved = False
         self.record = np.zeros(self.max_iterations + 1)
         self.seed = seed
         self.stagnment_iterations = 0
@@ -406,7 +407,11 @@ class EvolutionaryAlgorithm:
                 print(f'Iteration = {self.i}, Mean fitness = {np.mean([xi.fitness for xi in self.population])}, Best fitness = {self.best_individual.fitness}, Best fitness testing = {self.best_individual.fitness_test}')
             if self.best_individual.fitness <= stop_criteria:
                 print('Stop criteria achieved!')
-                break
+                self.goal_achieved = True
+                self.goal_achieved_it = self.i
+                self.goal_achieved_individual = np.copy(self.best_individual.genotype)
+                self.goal_achieved_fitness = self.best_individual.fitness
+                # break
             self.record[self.i + 1] = self.best_individual.fitness
         return self.best_individual.genotype, self.best_individual.fitness
 
@@ -487,7 +492,11 @@ if __name__ == "__main__":
                     'record' : optimizer.record, 
                     'lambda_decay' : lambd,
                     'lambda_exp' : lambda_exp[i],
-                    'seed': SEED
+                    'seed': SEED,
+                    'goal_achieved' : optimizer.goal_achieved,
+                    'goal_achieved_it' : optimizer.goal_achieved_it,
+                    'goal_achieved_individual' : optimizer.goal_achieved_individual,
+                    'goal_achieved_fitness' : optimizer.goal_achieved_fitness
                     }
                 with open(output_filename, 'wb') as file:
                     pickle.dump(output, file)
