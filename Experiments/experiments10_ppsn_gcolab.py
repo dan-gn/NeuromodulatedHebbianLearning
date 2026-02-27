@@ -405,7 +405,7 @@ class EvolutionaryAlgorithm:
         #     for g, f in zip(offspring_genotypes, fitnesses)
         # ]
 
-        with ProcessPoolExecutor(max_workers=4) as executor:
+        with ProcessPoolExecutor(max_workers=8) as executor:
             offspring = list(executor.map(self.run_single, parents))
 
         offspring = np.array(offspring).flatten().tolist()
@@ -419,9 +419,9 @@ class EvolutionaryAlgorithm:
             offspring = self.crossover_and_mutation(parents)
             # print(f'Normal time = {time.time() - start_time}')
         else:
-            start_time = time.time()
+            # start_time = time.time()
             offspring = self.parallel_crossover_and_mutation(parents)
-            print(f'Parallel time = {time.time() - start_time}')
+            # print(f'Parallel time = {time.time() - start_time}')
         self.elitism(offspring)
 
     def run(self, stop_criteria, seed):
