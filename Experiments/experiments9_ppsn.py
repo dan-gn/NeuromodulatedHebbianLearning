@@ -53,7 +53,7 @@ ARGUMENTS
 # Experiment parameters
 SEED = None
 READ_DATA = False   # Read data from input_filename
-STORE_DATA = True   # Store data on output_filename
+STORE_DATA = False   # Store data on output_filename
 
 # input_filename = 'output_MountainCar-v0_static_2025-01-27_21-10-50.pkl'
 # input_filename = 'exp4_output_ea_CartPole-v1_neuromodulated_hb_seed-1_time-2025-03-23_16-47-04.pkl'
@@ -76,13 +76,34 @@ ENVIRONMENTS.append('LunarLander-v3')
 ENVIRONMENTS.append('CartPole-v1')
 ENVIRONMENTS.append('Acrobot-v1')
 
-# Optimisation parameters
+
+"""
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+OPTIMIZER PARAMETERS
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+"""
+def set_optimiser_iteration_number(env):
+    if env == 'CartPole-v1':
+        n_iterations = 100
+    elif env == 'MountainCar-v0':
+        n_iterations = 500
+    elif env == 'LunarLander-v3':
+        n_iterations = 500
+    elif env == 'Acrobot-v1':
+        n_iterations = 100
+    else:
+        raise ValueError('Environment not found.')
+    return n_iterations
+        
 POPULATION_SIZE = 100
-ITERATIONS = 200
+ITERATIONS = set_optimiser_iteration_number(ENVIRONMENTS[ENV_NUMBER])
+
 EVALUATIONS = POPULATION_SIZE * ITERATIONS
 TRIES = 10
 MAX_STAGNMENT = 50
 LAMBDA_DECAY = 0.05
+
+RUN_IN_PARALLEL = True
 
 # Evaluation parameters
 SHOW_BEST = False    # Runs the best solution for EVAL_TRIES
@@ -228,7 +249,7 @@ class Individual:
 
 class EvolutionaryAlgorithm:
 
-    def __init__(self, n_variables, max_iterations, population_size, max_stagnment, model_name, environment_name, tries, lambda_value):
+    def __init__(self, n_variables, max_iterations, population_size, max_stagnment, model_name, environment_name, tries, lambda_value, run_in_parallel = True):
         self.max_iterations = max_iterations
         self.population_size = population_size
         self.n_variables = n_variables
@@ -243,6 +264,7 @@ class EvolutionaryAlgorithm:
         self.environment_name = environment_name
         self.tries = tries
         self.lambda_value = lambda_value
+        self.run_in_parallel = run_in_parallel
 
     def init_best_individual(self):
         self.best_individual = Individual(self.n_variables)
@@ -354,36 +376,52 @@ class EvolutionaryAlgorithm:
             fitness_g2 = objective_function(mutated_g2, seed = self.seed, model_name=self.model_name, environment_name=self.environment_name, tries=self.tries, lambda_value=self.lambda_value)
             offspring.append(Individual(self.n_variables, genotype=mutated_g2, fitness=fitness_g2))
         return offspring
-    
+
+    def run_single(self, parents):
+        genotype1, genotype2 = self.sbx(parents)
+        mutated_g1 = self.mutate(genotype1)
+        fitness_g1 = objective_function(mutated_g1, seed = self.seed, model_name=self.model_name, environment_name=self.environment_name, tries=self.tries, lambda_value=self.lambda_value)
+        mutated_g2 = self.mutate(genotype2)
+        fitness_g2 = objective_function(mutated_g2, seed = self.seed, model_name=self.model_name, environment_name=self.environment_name, tries=self.tries, lambda_value=self.lambda_value)
+        offspring1 = Individual(self.n_variables, genotype=mutated_g1, fitness=fitness_g1)
+        offspring2 = Individual(self.n_variables, genotype=mutated_g2, fitness=fitness_g2)
+        return [offspring1, offspring2]
+
+
     def parallel_crossover_and_mutation(self, parents):
-        offspring_genotypes = []
-        for p in parents:
-            genotype1, genotype2 = self.sbx(p)
-            offspring_genotypes.append(self.mutate(genotype1))
-            offspring_genotypes.append(self.mutate(genotype2))
+        # offspring_genotypes = []
+        # for p in parents:
+        #     genotype1, genotype2 = self.sbx(p)
+        #     offspring_genotypes.append(self.mutate(genotype1))
+        #     offspring_genotypes.append(self.mutate(genotype2))
 
-        # Parallel evaluation of all genotypes
-        with ProcessPoolExecutor() as executor:
-            fitnesses = list(executor.map(lambda g: objective_function(g, seed=self.seed, model_name=self.model_name, environment_name=self.environment_name, tries=self.tries, lambda_value=self.lambda_value), offspring_genotypes))
+        # # Parallel evaluation of all genotypes
+        # with ProcessPoolExecutor() as executor:
+        #     fitnesses = list(executor.map(lambda g: objective_function(g, seed=self.seed, model_name=self.model_name, environment_name=self.environment_name, tries=self.tries, lambda_value=self.lambda_value), offspring_genotypes))
 
-        # Build offspring individuals
-        offspring = [
-            Individual(self.n_variables, genotype=g, fitness=f)
-            for g, f in zip(offspring_genotypes, fitnesses)
-        ]
+        # # Build offspring individuals
+        # offspring = [
+        #     Individual(self.n_variables, genotype=g, fitness=f)
+        #     for g, f in zip(offspring_genotypes, fitnesses)
+        # ]
+
+        with ProcessPoolExecutor(max_workers=4) as executor:
+            offspring = list(executor.map(self.run_single, parents))
+
+        offspring = np.array(offspring).flatten().tolist()
 
         return offspring
 
     def update_population(self):
         parents = self.parent_selection()
-        # offspring = self.crossover(parents)
-        # offspring = self.mutation(offspring)
-        # start_time = time.time()
-        offspring = self.crossover_and_mutation(parents)
-        # print(f'Normal time = {time.time() - start_time}')
-        # start_time = time.time()
-        # offspring = self.parallel_crossover_and_mutation(parents)
-        # print(f'Parallel time = {time.time() - start_time}')
+        if not self.run_in_parallel:
+            # start_time = time.time()
+            offspring = self.crossover_and_mutation(parents)
+            # print(f'Normal time = {time.time() - start_time}')
+        else:
+            # start_time = time.time()
+            offspring = self.parallel_crossover_and_mutation(parents)
+            # print(f'Parallel time = {time.time() - start_time}')
         self.elitism(offspring)
 
     def run(self, stop_criteria, seed):
@@ -396,6 +434,7 @@ class EvolutionaryAlgorithm:
         self.stagnment_iterations = 0
         self.population = self.initialise_population()
         for self.i in range(self.max_iterations):
+            start_time = time.time()
             self.record[self.i] = self.best_individual.fitness
             if self.stagnment_iterations >= self.max_stagnment:
                 print('Restart population!')
@@ -408,18 +447,20 @@ class EvolutionaryAlgorithm:
                 self.update_population()
             if self.i % 25 == 0:
                 print(f'Iteration = {self.i}, Mean fitness = {np.mean([xi.fitness for xi in self.population])}, Best fitness = {self.best_individual.fitness}, Best fitness testing = {self.best_individual.fitness_test}')
-            if self.best_individual.fitness <= stop_criteria:
+            if self.best_individual.fitness <= stop_criteria and not self.goal_achieved:
                 print('Stop criteria achieved!')
                 self.goal_achieved = True
                 self.goal_achieved_it = self.i
                 self.goal_achieved_individual = np.copy(self.best_individual.genotype)
                 self.goal_achieved_fitness = self.best_individual.fitness
                 # break
-            self.record[self.i + 1] = self.best_individual.fitness
+            print(f'Iteration total time = {time.time() - start_time}')
+        self.record[self.i + 1] = self.best_individual.fitness
         return self.best_individual.genotype, self.best_individual.fitness
 
 
 lambda_exp = [x/2 for x in range(0, 11)]
+# lambda_exp = [x/2 for x in range(0, 1)]
 lambdas = [10**(-x) for x in lambda_exp]
 
 """
@@ -432,11 +473,11 @@ if __name__ == "__main__":
     MAX_EPISODE_STEPS, STOP_CONDITION, HIDDEN_SIZES = set_model_and_environment_parameters(ENV, MODEL)
 
     for i, lambd in enumerate(lambdas):
-        for seed in range(0, 15):
+        for seed in range(20, 30):
 
-            if lambd == 9:
+            if lambda_exp[i] == 9/2:
                 MODEL = 'abcd'
-            elif lambd == 10:
+            elif lambda_exp[i] == 10/2:
                 MODEL = 'static'
             else:
                 MODEL = 'neuromodulated_hb'
@@ -457,13 +498,13 @@ if __name__ == "__main__":
             print(f'hidden = {HIDDEN_SIZES}, n_variables = {n_variables}, Layers = {len(model.layers)}, Stopping criteria = {STOP_CONDITION}')
 
             # Instantiate the CMA-ES optimizer
-            optimizer = EvolutionaryAlgorithm(n_variables=n_variables, max_iterations=ITERATIONS, population_size=POPULATION_SIZE, max_stagnment=MAX_STAGNMENT, model_name=MODEL, environment_name=ENV, tries=TRIES, lambda_value=lambd)
+            optimizer = EvolutionaryAlgorithm(n_variables=n_variables, max_iterations=ITERATIONS, population_size=POPULATION_SIZE, max_stagnment=MAX_STAGNMENT, model_name=MODEL, environment_name=ENV, tries=TRIES, lambda_value=lambd, run_in_parallel=RUN_IN_PARALLEL)
             start_time = time.time()
             timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
             print(f'Optimisation started at {timestamp}.')
 
             if READ_DATA:
-                with open(f'Experiments/Results/test_july/{input_filename}', 'rb') as file:
+                with open(f'Experiments/Results/test_feb_ppsn/{input_filename}', 'rb') as file:
                     data = pickle.load(file)
                 best_solution = data['best_solution']
                 best_score = data['best_score']
@@ -483,7 +524,7 @@ if __name__ == "__main__":
             # Store experiment data
             if STORE_DATA and not READ_DATA:
                 timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-                output_filename = f'Experiments/Results/test_nov/exp7_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}_lambda_{lambda_exp[i]}.pkl'
+                output_filename = f'Experiments/Results/test_ppsn_feb/exp7_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}_lambda_{lambda_exp[i]}.pkl'
                 output = {
                     'best_solution': best_solution,
                     'best_score': best_score,
@@ -504,7 +545,7 @@ if __name__ == "__main__":
                 with open(output_filename, 'wb') as file:
                     pickle.dump(output, file)
 
-                log_file = f'Experiments/Results/test_nov/experiments_log_100pop.csv'
+                log_file = f'Experiments/Results/test_ppsn_feb/experiments_log_100pop.csv'
                 new_line = {
                     'filename' : output_filename,
                     'algorithm' : 'EA',
@@ -523,7 +564,9 @@ if __name__ == "__main__":
                     'tries' : TRIES,
                     'evaluation_score' : total_reward,
                     'eval_tries' : EVAL_TRIES,
-                    'time' : time.time() - start_time
+                    'goal_achieved' : optimizer.goal_achieved,
+                    'goal_achieved_it' : optimizer.goal_achieved_it,
+                    'time' : time.time() - start_time,
                     }
                 append_line_to_csv(log_file, new_line)
 

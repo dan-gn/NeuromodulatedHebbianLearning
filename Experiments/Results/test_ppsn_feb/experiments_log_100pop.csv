@@ -1,0 +1,2 @@
+filename,algorithm,environment,model,seed,population_size,max_iterations,n_iterations,best_score,hidden_size,n_variables,max_stagnment,lambda_decay,lambda_exp,tries,evaluation_score,eval_tries,time
+Experiments/Results/test_ppsn_feb/exp7_output_ea_CartPole-v1_neuromodulated_hb_seed-0_time-2026-02-27_19-21-35_lambda_0.0.pkl,EA,CartPole-v1,neuromodulated_hb,0,100,1,0,-1852.0,"[64, 32]",11680,50,1.0,0.0,10,-9374.0,100,63.027690172195435
