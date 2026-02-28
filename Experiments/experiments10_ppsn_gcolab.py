@@ -525,8 +525,10 @@ if __name__ == "__main__":
 
             # Store experiment data
             if STORE_DATA and not READ_DATA:
+                timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+                # output_filename = f'Experiments/Results/test_ppsn_feb/exp7_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}_lambda_{lambda_exp[i]}.pkl'
+                output_filename = f'../drive/MyDrive/PPSN26/Experiments/Results/test_ppsn_feb/exp7_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}_lambda_{lambda_exp[i]}.pkl'
                 
-
                 # log_file = f'Experiments/Results/test_ppsn_feb/experiments_log_100pop.csv'
                 log_file = f'../drive/MyDrive/PPSN26/Experiments/Results/test_ppsn_feb/experiments_log_colab.csv'
                 new_line = {
@@ -553,9 +555,6 @@ if __name__ == "__main__":
                     }
                 append_line_to_csv(log_file, new_line)
                 
-                timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-                # output_filename = f'Experiments/Results/test_ppsn_feb/exp7_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}_lambda_{lambda_exp[i]}.pkl'
-                output_filename = f'../drive/MyDrive/PPSN26/Experiments/Results/test_ppsn_feb/exp7_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}_lambda_{lambda_exp[i]}.pkl'
                 output = {
                     'best_solution': best_solution,
                     'best_score': best_score,
