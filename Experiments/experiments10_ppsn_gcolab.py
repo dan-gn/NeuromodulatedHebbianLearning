@@ -473,7 +473,7 @@ class EvolutionaryAlgorithm:
                 self.population[-1].fitness = self.best_individual.fitness
             else:
                 self.update_population()
-            if self.i % 1 == 0:
+            if self.i % 25 == 0:
                 print(f'Iteration = {self.i}, Mean fitness = {np.mean([xi.fitness for xi in self.population])}, Best fitness = {self.best_individual.fitness}, Best fitness testing = {self.best_individual.fitness_test}, Iteration time = {time.time() - start_time:.2f}')
             if self.best_individual.fitness <= stop_criteria and not self.goal_achieved:
                 print('Stop criteria achieved!')
@@ -558,7 +558,7 @@ if __name__ == "__main__":
                 output_filename = f'../drive/MyDrive/PPSN26/Experiments/Results/test_ppsn_feb/exp7_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}_lambda_{lambda_exp[i]}.pkl'
                 
                 # log_file = f'Experiments/Results/test_ppsn_feb/experiments_log_100pop.csv'
-                log_file = f'../drive/MyDrive/PPSN26/Experiments/Results/test_ppsn_feb/experiments_log_colab.csv'
+                log_file = f'../drive/MyDrive/PPSN26/Experiments/Results/test_ppsn_feb/experiments_log_colab_exp0.csv'
                 new_line = {
                     'filename' : output_filename,
                     'algorithm' : 'EA',
