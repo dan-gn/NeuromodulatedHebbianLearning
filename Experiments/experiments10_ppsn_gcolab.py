@@ -84,13 +84,13 @@ OPTIMIZER PARAMETERS
 """
 def set_optimiser_iteration_number(env):
     if env == 'CartPole-v1':
-        n_iterations = 25
+        n_iterations = 100
     elif env == 'MountainCar-v0':
         n_iterations = 500
     elif env == 'LunarLander-v3':
         n_iterations = 500
     elif env == 'Acrobot-v1':
-        n_iterations = 100
+        n_iterations = 150
     else:
         raise ValueError('Environment not found.')
     return n_iterations
