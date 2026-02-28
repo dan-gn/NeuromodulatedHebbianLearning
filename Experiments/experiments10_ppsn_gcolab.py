@@ -53,7 +53,7 @@ ARGUMENTS
 # Experiment parameters
 SEED = None
 READ_DATA = False   # Read data from input_filename
-STORE_DATA = False   # Store data on output_filename
+STORE_DATA = True   # Store data on output_filename
 
 # input_filename = 'output_MountainCar-v0_static_2025-01-27_21-10-50.pkl'
 # input_filename = 'exp4_output_ea_CartPole-v1_neuromodulated_hb_seed-1_time-2025-03-23_16-47-04.pkl'
@@ -433,7 +433,7 @@ class EvolutionaryAlgorithm:
         self.seed = seed
         self.stagnment_iterations = 0
         self.population = self.initialise_population()
-        for self.i in range(self.max_iterations):
+        for self.i in range(self.max_iterations + 1):
             start_time = time.time()
             self.record[self.i] = self.best_individual.fitness
             if self.stagnment_iterations >= self.max_stagnment:
@@ -446,7 +446,7 @@ class EvolutionaryAlgorithm:
             else:
                 self.update_population()
             if self.i % 25 == 0:
-                print(f'Iteration = {self.i}, Mean fitness = {np.mean([xi.fitness for xi in self.population])}, Best fitness = {self.best_individual.fitness}, Best fitness testing = {self.best_individual.fitness_test}')
+                print(f'Iteration = {self.i}, Mean fitness = {np.mean([xi.fitness for xi in self.population])}, Best fitness = {self.best_individual.fitness}, Best fitness testing = {self.best_individual.fitness_test}, Iteration time = {time.time() - start_time}')
             if self.best_individual.fitness <= stop_criteria and not self.goal_achieved:
                 print('Stop criteria achieved!')
                 self.goal_achieved = True
@@ -525,7 +525,7 @@ if __name__ == "__main__":
             if STORE_DATA and not READ_DATA:
                 timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
                 # output_filename = f'Experiments/Results/test_ppsn_feb/exp7_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}_lambda_{lambda_exp[i]}.pkl'
-                output_filename = f'../drive/MyDrive/AICS/Experiments/Results/test_ppsn_feb/exp7_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}_lambda_{lambda_exp[i]}.pkl'
+                output_filename = f'../drive/MyDrive/PPSN26/Experiments/Results/test_ppsn_feb/exp7_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}_lambda_{lambda_exp[i]}.pkl'
                 output = {
                     'best_solution': best_solution,
                     'best_score': best_score,
@@ -547,7 +547,7 @@ if __name__ == "__main__":
                     pickle.dump(output, file)
 
                 # log_file = f'Experiments/Results/test_ppsn_feb/experiments_log_100pop.csv'
-                log_file = f'../drive/MyDrive/AICS/Experiments/Results/test_ppsn_feb/experiments_log_colab.csv'
+                log_file = f'../drive/MyDrive/PPSN26/Experiments/Results/test_ppsn_feb/experiments_log_colab.csv'
                 new_line = {
                     'filename' : output_filename,
                     'algorithm' : 'EA',
