@@ -84,7 +84,7 @@ OPTIMIZER PARAMETERS
 """
 def set_optimiser_iteration_number(env):
     if env == 'CartPole-v1':
-        n_iterations = 100
+        n_iterations = 25
     elif env == 'MountainCar-v0':
         n_iterations = 500
     elif env == 'LunarLander-v3':
@@ -445,8 +445,8 @@ class EvolutionaryAlgorithm:
                 self.population[-1].fitness = self.best_individual.fitness
             else:
                 self.update_population()
-            if self.i % 25 == 0:
-                print(f'Iteration = {self.i}, Mean fitness = {np.mean([xi.fitness for xi in self.population])}, Best fitness = {self.best_individual.fitness}, Best fitness testing = {self.best_individual.fitness_test}, Iteration time = {time.time() - start_time}')
+            # if self.i % 25 == 0:
+            print(f'Iteration = {self.i}, Mean fitness = {np.mean([xi.fitness for xi in self.population])}, Best fitness = {self.best_individual.fitness}, Best fitness testing = {self.best_individual.fitness_test}, Iteration time = {time.time() - start_time}')
             if self.best_individual.fitness <= stop_criteria and not self.goal_achieved:
                 print('Stop criteria achieved!')
                 self.goal_achieved = True
@@ -473,7 +473,7 @@ if __name__ == "__main__":
     MAX_EPISODE_STEPS, STOP_CONDITION, HIDDEN_SIZES = set_model_and_environment_parameters(ENV, MODEL)
 
     for i, lambd in enumerate(lambdas):
-        for seed in range(20, 30):
+        for seed in range(0, 10):
 
             if lambda_exp[i] == 9/2:
                 MODEL = 'abcd'
