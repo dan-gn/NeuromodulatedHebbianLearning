@@ -104,7 +104,7 @@ MAX_STAGNMENT = 50
 LAMBDA_DECAY = 0.05
 
 RUN_IN_PARALLEL = True
-CORES = 4
+CORES = 8
 
 # Evaluation parameters
 SHOW_BEST = False    # Runs the best solution for EVAL_TRIES
@@ -460,7 +460,7 @@ class EvolutionaryAlgorithm:
         self.seed = seed
         self.stagnment_iterations = 0
         self.population = self.initialise_population()
-        self.n_core_seeds = 1   # Set to start at 1 to avoid divide by 0
+        self.n_core_seeds = np.random.randint(1, 2**14)   # These is the seed for the cores in parallel computing
         for self.i in range(self.max_iterations):
             start_time = time.time()
             self.record[self.i] = self.best_individual.fitness
@@ -473,8 +473,8 @@ class EvolutionaryAlgorithm:
                 self.population[-1].fitness = self.best_individual.fitness
             else:
                 self.update_population()
-            if self.i % 25 == 0:
-                print(f'Iteration = {self.i}, Mean fitness = {np.mean([xi.fitness for xi in self.population])}, Best fitness = {self.best_individual.fitness}, Best fitness testing = {self.best_individual.fitness_test}, Iteration time = {time.time() - start_time}')
+            if self.i % 1 == 0:
+                print(f'Iteration = {self.i}, Mean fitness = {np.mean([xi.fitness for xi in self.population])}, Best fitness = {self.best_individual.fitness}, Best fitness testing = {self.best_individual.fitness_test}, Iteration time = {time.time() - start_time:.2f}')
             if self.best_individual.fitness <= stop_criteria and not self.goal_achieved:
                 print('Stop criteria achieved!')
                 self.goal_achieved = True
@@ -562,6 +562,8 @@ if __name__ == "__main__":
                 new_line = {
                     'filename' : output_filename,
                     'algorithm' : 'EA',
+                    'parallel' : RUN_IN_PARALLEL,
+                    'cores' : CORES,
                     'environment' : ENV,
                     'model' : MODEL,
                     'seed' : SEED,
@@ -592,6 +594,8 @@ if __name__ == "__main__":
                     'max_iterations': ITERATIONS,
                     'n_iterations' : optimizer.i,
                     'record' : optimizer.record, 
+                    'parallel' : RUN_IN_PARALLEL,
+                    'cores' : CORES,
                     'lambda_decay' : lambd,
                     'lambda_exp' : lambda_exp[i],
                     'seed': SEED,
