@@ -104,6 +104,7 @@ MAX_STAGNMENT = 50
 LAMBDA_DECAY = 0.05
 
 RUN_IN_PARALLEL = True
+CORES = 4
 
 # Evaluation parameters
 SHOW_BEST = False    # Runs the best solution for EVAL_TRIES
@@ -376,8 +377,23 @@ class EvolutionaryAlgorithm:
             fitness_g2 = objective_function(mutated_g2, seed = self.seed, model_name=self.model_name, environment_name=self.environment_name, tries=self.tries, lambda_value=self.lambda_value)
             offspring.append(Individual(self.n_variables, genotype=mutated_g2, fitness=fitness_g2))
         return offspring
+    
+    def set_seed(self, seed):
+        torch.manual_seed(self.seed)
+        torch.cuda.manual_seed(self.seed)
+        np.random.seed(self.seed)
+        random.seed(self.seed)
 
-    def run_single(self, parents):
+
+    # This function is for running the evolutionary algorithm in parallel. 
+    # This function creates a couple of offsprings by performing parent seletction, crossover, mutation and evaluation. 
+    # When running in parallel, each core starts its own random generator, so I included the input "core_seed", so each time the iteration ensure a different random process.
+    def run_single(self, core_seed):
+        self.set_seed(core_seed)
+
+        # parents = self.parents[np.mod(core_seed, self.n_core_seeds)]
+        parents = self.tournament_selection() 
+
         genotype1, genotype2 = self.sbx(parents)
         mutated_g1 = self.mutate(genotype1)
         fitness_g1 = objective_function(mutated_g1, seed = self.seed, model_name=self.model_name, environment_name=self.environment_name, tries=self.tries, lambda_value=self.lambda_value)
@@ -388,7 +404,7 @@ class EvolutionaryAlgorithm:
         return [offspring1, offspring2]
 
 
-    def parallel_crossover_and_mutation(self, parents):
+    def parallel_crossover_and_mutation(self):
         # offspring_genotypes = []
         # for p in parents:
         #     genotype1, genotype2 = self.sbx(p)
@@ -404,23 +420,28 @@ class EvolutionaryAlgorithm:
         #     Individual(self.n_variables, genotype=g, fitness=f)
         #     for g, f in zip(offspring_genotypes, fitnesses)
         # ]
-
-        with ProcessPoolExecutor(max_workers=8) as executor:
-            offspring = list(executor.map(self.run_single, parents))
-
+        self.probs = self.compute_parent_selection_prob()
+        n_couples = int(self.population_size/2)
+        # self.parents = parents
+        with ProcessPoolExecutor(max_workers=CORES) as executor:
+            # offspring = list(executor.map(lambda core_seed: self.run_single(parents, core_seed), range(self.n_core_seeds, self.n_core_seeds + len(parents))))
+            # offspring = list(executor.map(self.run_single, parents))
+            offspring = list(executor.map(self.run_single, range(self.n_core_seeds, self.n_core_seeds + n_couples)))
+        
+        self.n_core_seeds += n_couples
         offspring = np.array(offspring).flatten().tolist()
 
         return offspring
 
     def update_population(self):
-        parents = self.parent_selection()
         if not self.run_in_parallel:
             # start_time = time.time()
+            parents = self.parent_selection()
             offspring = self.crossover_and_mutation(parents)
             # print(f'Normal time = {time.time() - start_time}')
         else:
             # start_time = time.time()
-            offspring = self.parallel_crossover_and_mutation(parents)
+            offspring = self.parallel_crossover_and_mutation()
             # print(f'Parallel time = {time.time() - start_time}')
         self.elitism(offspring)
 
@@ -433,6 +454,7 @@ class EvolutionaryAlgorithm:
         self.seed = seed
         self.stagnment_iterations = 0
         self.population = self.initialise_population()
+        self.n_core_seeds = 1   # Set to start at 1 to avoid divide by 0
         for self.i in range(self.max_iterations):
             start_time = time.time()
             self.record[self.i] = self.best_individual.fitness
