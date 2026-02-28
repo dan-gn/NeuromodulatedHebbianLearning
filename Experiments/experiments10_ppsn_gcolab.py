@@ -433,7 +433,7 @@ class EvolutionaryAlgorithm:
         self.seed = seed
         self.stagnment_iterations = 0
         self.population = self.initialise_population()
-        for self.i in range(self.max_iterations + 1):
+        for self.i in range(self.max_iterations):
             start_time = time.time()
             self.record[self.i] = self.best_individual.fitness
             if self.stagnment_iterations >= self.max_stagnment:
@@ -454,7 +454,7 @@ class EvolutionaryAlgorithm:
                 self.goal_achieved_individual = np.copy(self.best_individual.genotype)
                 self.goal_achieved_fitness = self.best_individual.fitness
                 # break
-            print(f'Iteration total time = {time.time() - start_time}')
+            # print(f'Iteration total time = {time.time() - start_time}')
         self.record[self.i + 1] = self.best_individual.fitness
         return self.best_individual.genotype, self.best_individual.fitness
 
@@ -512,6 +512,7 @@ if __name__ == "__main__":
                 # Run optimization
                 best_solution, best_score = optimizer.run(STOP_CONDITION, SEED)
 
+            execution_time = time.time() - start_time
             
             print("Best solution:", best_solution)
             print("Best score:", best_score)
@@ -521,30 +522,10 @@ if __name__ == "__main__":
             # total_reward = objective_function(best_solution, tries = EVAL_TRIES, show=SHOW_BEST, seed=0, model_name=MODEL, environment_name=ENV)
             print(f'Evaluation total reward {total_reward}')
 
+
             # Store experiment data
             if STORE_DATA and not READ_DATA:
-                timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-                # output_filename = f'Experiments/Results/test_ppsn_feb/exp7_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}_lambda_{lambda_exp[i]}.pkl'
-                output_filename = f'../drive/MyDrive/PPSN26/Experiments/Results/test_ppsn_feb/exp7_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}_lambda_{lambda_exp[i]}.pkl'
-                output = {
-                    'best_solution': best_solution,
-                    'best_score': best_score,
-                    'evaluation_score' : total_reward,
-                    'hidden_size': HIDDEN_SIZES,
-                    'population_size': POPULATION_SIZE,
-                    'max_iterations': ITERATIONS,
-                    'n_iterations' : optimizer.i,
-                    'record' : optimizer.record, 
-                    'lambda_decay' : lambd,
-                    'lambda_exp' : lambda_exp[i],
-                    'seed': SEED,
-                    'goal_achieved' : optimizer.goal_achieved,
-                    'goal_achieved_it' : optimizer.goal_achieved_it,
-                    'goal_achieved_individual' : optimizer.goal_achieved_individual,
-                    'goal_achieved_fitness' : optimizer.goal_achieved_fitness
-                    }
-                with open(output_filename, 'wb') as file:
-                    pickle.dump(output, file)
+                
 
                 # log_file = f'Experiments/Results/test_ppsn_feb/experiments_log_100pop.csv'
                 log_file = f'../drive/MyDrive/PPSN26/Experiments/Results/test_ppsn_feb/experiments_log_colab.csv'
@@ -568,8 +549,33 @@ if __name__ == "__main__":
                     'eval_tries' : EVAL_TRIES,
                     'goal_achieved' : optimizer.goal_achieved,
                     'goal_achieved_it' : optimizer.goal_achieved_it,
-                    'time' : time.time() - start_time,
+                    'time' : execution_time,
                     }
                 append_line_to_csv(log_file, new_line)
-
+                
+                timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+                # output_filename = f'Experiments/Results/test_ppsn_feb/exp7_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}_lambda_{lambda_exp[i]}.pkl'
+                output_filename = f'../drive/MyDrive/PPSN26/Experiments/Results/test_ppsn_feb/exp7_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}_lambda_{lambda_exp[i]}.pkl'
+                output = {
+                    'best_solution': best_solution,
+                    'best_score': best_score,
+                    'evaluation_score' : total_reward,
+                    'hidden_size': HIDDEN_SIZES,
+                    'population_size': POPULATION_SIZE,
+                    'max_iterations': ITERATIONS,
+                    'n_iterations' : optimizer.i,
+                    'record' : optimizer.record, 
+                    'lambda_decay' : lambd,
+                    'lambda_exp' : lambda_exp[i],
+                    'seed': SEED,
+                    'goal_achieved' : optimizer.goal_achieved,
+                    'goal_achieved_it' : optimizer.goal_achieved_it,
+                    'goal_achieved_individual' : optimizer.goal_achieved_individual,
+                    'goal_achieved_fitness' : optimizer.goal_achieved_fitness,
+                    'execution_time' : execution_time,
+                    'log_file' : log_file,
+                    'log_file_line' : new_line
+                    }
+                with open(output_filename, 'wb') as file:
+                    pickle.dump(output, file)
 
