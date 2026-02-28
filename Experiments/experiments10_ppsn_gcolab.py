@@ -379,10 +379,10 @@ class EvolutionaryAlgorithm:
         return offspring
     
     def set_seed(self, seed):
-        torch.manual_seed(self.seed)
-        torch.cuda.manual_seed(self.seed)
-        np.random.seed(self.seed)
-        random.seed(self.seed)
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed(seed)
+        np.random.seed(seed)
+        random.seed(seed)
 
 
     # This function is for running the evolutionary algorithm in parallel. 
@@ -391,11 +391,17 @@ class EvolutionaryAlgorithm:
     def run_single(self, core_seed):
         self.set_seed(core_seed)
 
+        # Parent Selection
         # parents = self.parents[np.mod(core_seed, self.n_core_seeds)]
         parents = self.tournament_selection() 
 
+        # Crossover
         genotype1, genotype2 = self.sbx(parents)
+
+        # Mutation
         mutated_g1 = self.mutate(genotype1)
+        
+        # Evaluation
         fitness_g1 = objective_function(mutated_g1, seed = self.seed, model_name=self.model_name, environment_name=self.environment_name, tries=self.tries, lambda_value=self.lambda_value)
         mutated_g2 = self.mutate(genotype2)
         fitness_g2 = objective_function(mutated_g2, seed = self.seed, model_name=self.model_name, environment_name=self.environment_name, tries=self.tries, lambda_value=self.lambda_value)
