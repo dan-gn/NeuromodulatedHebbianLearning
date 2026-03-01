@@ -69,7 +69,7 @@ MODELS.append('neuromodulated_hb')
 MODELS.append('static')
 
 # Environment options
-ENV_NUMBER = 2
+ENV_NUMBER = 0
 ENVIRONMENTS = []
 ENVIRONMENTS.append('MountainCar-v0')
 ENVIRONMENTS.append('LunarLander-v3')
@@ -104,7 +104,7 @@ MAX_STAGNMENT = 50
 LAMBDA_DECAY = 0.05
 
 RUN_IN_PARALLEL = True
-CORES = 8
+CORES = 40
 
 # Evaluation parameters
 SHOW_BEST = False    # Runs the best solution for EVAL_TRIES
@@ -491,6 +491,11 @@ lambda_exp = [x/2 for x in range(0, 11)]
 # lambda_exp = [x/2 for x in range(0, 1)]
 lambdas = [10**(-x) for x in lambda_exp]
 
+colab_file = 1
+initial_iteration = 10 * (colab_file-1)
+last_iteration = initial_iteration + 10
+
+
 """
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 MAIN FUNCTION
@@ -501,7 +506,8 @@ if __name__ == "__main__":
     MAX_EPISODE_STEPS, STOP_CONDITION, HIDDEN_SIZES = set_model_and_environment_parameters(ENV, MODEL)
 
     for i, lambd in enumerate(lambdas):
-        for seed in range(0, 10):
+        for seed in range(initial_iteration, last_iteration):
+
 
             if lambda_exp[i] == 9/2:
                 MODEL = 'abcd'
@@ -558,7 +564,7 @@ if __name__ == "__main__":
                 output_filename = f'../drive/MyDrive/PPSN26/Experiments/Results/test_ppsn_feb/exp7_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}_lambda_{lambda_exp[i]}.pkl'
                 
                 # log_file = f'Experiments/Results/test_ppsn_feb/experiments_log_100pop.csv'
-                log_file = f'../drive/MyDrive/PPSN26/Experiments/Results/test_ppsn_feb/experiments_log_colab_exp0.csv'
+                log_file = f'../drive/MyDrive/PPSN26/Experiments/Results/test_ppsn_feb/experiments_log_colab_exp{colab_file}.csv'
                 new_line = {
                     'filename' : output_filename,
                     'algorithm' : 'EA',
