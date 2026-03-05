@@ -14,7 +14,7 @@ from concurrent.futures import ProcessPoolExecutor
 
 SEED = 1996
 eval_tries = 1000
-CORES = 40
+CORES = 4
 
 MODELS = []
 MODELS.append('abcd')
@@ -60,8 +60,9 @@ for model in MODELS:
 for env in ENVIRONMENTS:
     print(f'Total number of rows of {env} = {(df['environment'] == env).sum()}')
 
-def run_single(row):
+def run_single(i):
     set_seed(SEED)
+    row = df.iloc[i]
     filename = log_folder + row['filename'].split('/')[-1]
     with open(filename, 'rb') as f:
         x = pickle.load(f)
@@ -77,7 +78,7 @@ def run_single(row):
 
 
 with ProcessPoolExecutor(max_workers=CORES) as executor:
-    testing = list(executor.map(run_single, df.itertuples()))
+    testing = list(executor.map(run_single, range(len(df))))
 
 # for i, row in df.iterrows():
 #     set_seed(SEED)
