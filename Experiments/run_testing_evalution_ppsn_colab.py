@@ -80,6 +80,8 @@ def run_single(i):
 with ProcessPoolExecutor(max_workers=CORES) as executor:
     testing = list(executor.map(run_single, range(len(df))))
 
+df['testing'] = testing
+
 # for i, row in df.iterrows():
 #     set_seed(SEED)
 #     filename = log_folder + row['filename'].split('/')[-1]
