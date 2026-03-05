@@ -10,8 +10,11 @@ import torch
 import numpy as np
 import random
 
+from concurrent.futures import ProcessPoolExecutor
+
 SEED = 1996
-eval_tries = 10
+eval_tries = 1000
+CORES = 40
 
 MODELS = []
 MODELS.append('abcd')
@@ -53,27 +56,46 @@ df['testing'] = None
 print(f'Total number of rows = {len(df)}')
 
 for model in MODELS:
-    print(f'Total number of rows of {model} = {df['environment' == model].value_counts()}')
+    print(f'Total number of rows of {model} = {(df['model'] == model).sum()}')
 for env in ENVIRONMENTS:
-    print(f'Total number of rows of {env} = {df['environment' == env].value_counts()}')
+    print(f'Total number of rows of {env} = {(df['environment'] == env).sum()}')
 
-for i, row in df.iterrows():
+def run_single(row):
     set_seed(SEED)
     filename = log_folder + row['filename'].split('/')[-1]
-    # print(filename)
     with open(filename, 'rb') as f:
         x = pickle.load(f)
         best_solution = x['best_solution']
-        # print(x['population_size'])
         model = row['model']
         env = row['environment']
         lambda_value = row['lambda_decay']
         exp_seed = row['seed']
-        # lambda_value = 0.01
         max_episode_steps, _, _ = set_model_and_environment_parameters(env, model)
         total_reward = objective_function(best_solution, tries = eval_tries, show=False, seed=SEED, model_name=model, environment_name=env, max_episode_steps=max_episode_steps, lambda_value=lambda_value)
         df.loc[i, 'testing'] = total_reward
         print(f'{i}: {env} - {model} -  {exp_seed} - {total_reward}')
+
+
+with ProcessPoolExecutor(max_workers=CORES) as executor:
+    testing = list(executor.map(run_single, df.itertuples()))
+
+# for i, row in df.iterrows():
+#     set_seed(SEED)
+#     filename = log_folder + row['filename'].split('/')[-1]
+#     # print(filename)
+#     with open(filename, 'rb') as f:
+#         x = pickle.load(f)
+#         best_solution = x['best_solution']
+#         # print(x['population_size'])
+#         model = row['model']
+#         env = row['environment']
+#         lambda_value = row['lambda_decay']
+#         exp_seed = row['seed']
+#         # lambda_value = 0.01
+#         max_episode_steps, _, _ = set_model_and_environment_parameters(env, model)
+#         total_reward = objective_function(best_solution, tries = eval_tries, show=False, seed=SEED, model_name=model, environment_name=env, max_episode_steps=max_episode_steps, lambda_value=lambda_value)
+#         df.loc[i, 'testing'] = total_reward
+#         print(f'{i}: {env} - {model} -  {exp_seed} - {total_reward}')
 
     # break
 df.to_csv(new_file)
