@@ -75,6 +75,7 @@ def run_single(i):
         total_reward = objective_function(best_solution, tries = eval_tries, show=False, seed=SEED, model_name=model, environment_name=env, max_episode_steps=max_episode_steps, lambda_value=lambda_value)
         df.loc[i, 'testing'] = total_reward
         print(f'{i}: {env} - {model} -  {exp_seed} - {total_reward}')
+    return total_reward
 
 
 with ProcessPoolExecutor(max_workers=CORES) as executor:
