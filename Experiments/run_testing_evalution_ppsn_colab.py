@@ -13,6 +13,16 @@ import random
 SEED = 1996
 eval_tries = 10
 
+MODELS = []
+MODELS.append('abcd')
+MODELS.append('neuromodulated_hb')
+MODELS.append('static')
+
+ENVIRONMENTS = []
+ENVIRONMENTS.append('MountainCar-v0')
+ENVIRONMENTS.append('CartPole-v1')
+ENVIRONMENTS.append('Acrobot-v1')
+
 def set_seed(seed):
     if SEED is not None:
         # print(f'Seed set to {SEED}.')
@@ -40,7 +50,12 @@ new_file = log_folder + f'ppsn_testing_results.csv'
 
 df['testing'] = None
 
-print(len(df))
+print(f'Total number of rows = {len(df)}')
+
+for model in MODELS:
+    print(f'Total number of rows of {model} = {df['environment' == model].value_counts()}')
+for env in ENVIRONMENTS:
+    print(f'Total number of rows of {env} = {df['environment' == env].value_counts()}')
 
 for i, row in df.iterrows():
     set_seed(SEED)
