@@ -14,7 +14,7 @@ from concurrent.futures import ProcessPoolExecutor
 
 SEED = 1996
 eval_tries = 1000
-CORES = 4
+CORES = 40
 
 MODELS = []
 MODELS.append('abcd')
