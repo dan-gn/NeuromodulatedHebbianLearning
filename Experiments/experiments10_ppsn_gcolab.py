@@ -69,7 +69,7 @@ MODELS.append('neuromodulated_hb')
 MODELS.append('static')
 
 # Environment options
-ENV_NUMBER = 0
+ENV_NUMBER = 1
 ENVIRONMENTS = []
 ENVIRONMENTS.append('MountainCar-v0')
 ENVIRONMENTS.append('LunarLander-v3')
@@ -88,7 +88,7 @@ def set_optimiser_iteration_number(env):
     elif env == 'MountainCar-v0':
         n_iterations = 500
     elif env == 'LunarLander-v3':
-        n_iterations = 500
+        n_iterations = 1000
     elif env == 'Acrobot-v1':
         n_iterations = 150
     else:
@@ -104,7 +104,7 @@ MAX_STAGNMENT = 50
 LAMBDA_DECAY = 0.05
 
 RUN_IN_PARALLEL = True
-CORES = 40
+CORES = 7
 
 # Evaluation parameters
 SHOW_BEST = False    # Runs the best solution for EVAL_TRIES
@@ -561,10 +561,10 @@ if __name__ == "__main__":
             if STORE_DATA and not READ_DATA:
                 timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
                 # output_filename = f'Experiments/Results/test_ppsn_feb/exp7_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}_lambda_{lambda_exp[i]}.pkl'
-                output_filename = f'../drive/MyDrive/PPSN26/Experiments/Results/test_ppsn_feb/exp7_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}_lambda_{lambda_exp[i]}.pkl'
+                output_filename = f'../drive/MyDrive/PPSN26/Experiments/Results/test_ppsn_march/exp7_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}_lambda_{lambda_exp[i]}.pkl'
                 
                 # log_file = f'Experiments/Results/test_ppsn_feb/experiments_log_100pop.csv'
-                log_file = f'../drive/MyDrive/PPSN26/Experiments/Results/test_ppsn_feb/experiments_log_colab_exp{colab_file}.csv'
+                log_file = f'../drive/MyDrive/PPSN26/Experiments/Results/test_ppsn_march/experiments_log_colab_exp{colab_file}.csv'
                 new_line = {
                     'filename' : output_filename,
                     'algorithm' : 'EA',
