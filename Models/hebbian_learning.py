@@ -39,7 +39,7 @@ class HebbianAbcdNN(StaticNN):
             self.layers[i].weight += delta_weights[i]
 
 
-    def apply_hebbian_rules_b(self, states):
+    def apply_hebbian_rules(self, states):
         with torch.no_grad():  # avoid autograd overhead
             for i, layer in enumerate(self.layers):
                 h = self.hebbian_coeff[i]  # (out, in, 5)
@@ -62,7 +62,7 @@ class HebbianAbcdNN(StaticNN):
                     E
                 )
 
-                layer.weight += delta
+                self.layer[i].weight += delta
 
     def forward(self, x):
         states = [x.unsqueeze(1)]
@@ -80,7 +80,7 @@ class HebbianAbcdNN(StaticNN):
         elif self.env_name == 'LunarLander-v3':
             # states.append(nn.functional.hardtanh(y, 0, 3).unsqueeze(1))
             states.append(F.softmax(y, dim=0).unsqueeze(1))
-        self.apply_hebbian_rules_a(states)
+        self.apply_hebbian_rules(states)
 
         return y
 
