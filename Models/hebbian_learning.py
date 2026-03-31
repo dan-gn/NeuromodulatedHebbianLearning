@@ -64,16 +64,6 @@ class HebbianAbcdNN(StaticNN):
 
                 layer.weight += delta
 
-
-def forward(self, x):
-    states = [x.unsqueeze(1)]
-    for layer in self.layers[:-1]:
-        x = layer(x)
-        x = self.activation(x)
-        states.append(x.unsqueeze(1))
-    y = self.layers[-1](x)
-    return y
-
     def forward(self, x):
         states = [x.unsqueeze(1)]
         for layer in self.layers[:-1]:
