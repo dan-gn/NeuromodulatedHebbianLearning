@@ -14,6 +14,15 @@ import datetime
 import time
 from concurrent.futures import ProcessPoolExecutor
 
+import sys
+import os
+current = os.path.dirname(os.path.realpath(__file__))
+parent = os.path.dirname(current)
+sys.path.append(parent)
+
+
+from Models.neuromodulated_hb import TimeBasedNeuromodulatedHebbianNN
+
 
 """ 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -24,6 +33,7 @@ ARGUMENTS
 # Experiment parameters
 SEED = 0
 MODEL = 'static'
+# MODEL = 'neuromodulated_hb'
 
 TRIES = 1
 SHOW_BEST = False    # Store recorded file
@@ -38,6 +48,8 @@ ENVIRONMENTS.append('LunarLander-v3')
 ENVIRONMENTS.append('CartPole-v1')
 ENVIRONMENTS.append('Acrobot-v1')
 ENV = ENVIRONMENTS[ENV_NUMBER]
+
+CORES = 7
 
 """
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -126,6 +138,9 @@ def get_model(output_size, model_name, env, env_name, lambda_value, hidden_sizes
     if model_name == 'static':
         model = StaticNN(input_size=env.observation_space.shape[0], output_size=output_size, hidden_sizes=hidden_sizes)
         n_variables = model.get_n_weights()
+    elif model_name == 'neuromodulated_hb':
+        model =  TimeBasedNeuromodulatedHebbianNN(input_size=env.observation_space.shape[0], output_size=output_size, hidden_sizes=hidden_sizes, env_name=env_name, lambda_decay=lambda_value)
+        n_variables = model.get_n_weights() * 5
     else:
         raise ValueError('Model not found.')
     return model, n_variables
@@ -212,7 +227,7 @@ def run_parallel_rewards(n):
     seeds = [SEED + i for i in range(n)]
 
     # 3. Execute in parallel
-    with ProcessPoolExecutor() as executor:
+    with ProcessPoolExecutor(max_workers=CORES) as executor:
         # executor.map replaces your 'for' loop and 'append'
         rewards = list(executor.map(partial_obj_func, seeds))
 
@@ -229,7 +244,8 @@ def run_single(i, random_solution, TRIES, SHOW_BEST, SEED, MODEL, ENV):
         show=SHOW_BEST,
         seed=SEED + i,
         model_name=MODEL,
-        environment_name=ENV
+        environment_name=ENV,
+        lambda_value = 1
     )
 
 if __name__ == "__main__":
@@ -256,17 +272,17 @@ if __name__ == "__main__":
     # Run the experiment
     # total_reward = objective_function(random_solution, tries = TRIES, show=SHOW_BEST, seed=SEED, model_name=MODEL, environment_name=ENV)
 
-    n = 1000
+    n = 10000
 
     start_time = time.time()
     rewards = []
     for i in range(n):
-        reward = objective_function(random_solution, tries = TRIES, show=SHOW_BEST, seed=SEED + i, model_name=MODEL, environment_name=ENV)
+        reward = objective_function(random_solution, tries = TRIES, show=SHOW_BEST, seed=SEED + i, model_name=MODEL, environment_name=ENV, lambda_value=1)
         rewards.append(reward)
     total_reward = np.sum(rewards)
     end_time = time.time() - start_time
 
-    # print(f'Evaluation total reward {total_reward}')
+    print(f'Evaluation total reward {total_reward}')
     print(f'Evaluation total time = {end_time}')
 
 
@@ -287,23 +303,27 @@ if __name__ == "__main__":
     # end_time = time.time() - start_time
     # print(f'Evaluation total time {end_time}')
 
-    for w in range(1, 21):
-        start_time = time.time()
-        with ProcessPoolExecutor(max_workers=w) as executor:
-            rewards = list(
-                executor.map(
-                    partial(
-                        run_single,
-                        random_solution=random_solution,
-                        TRIES=TRIES,
-                        SHOW_BEST=SHOW_BEST,
-                        SEED=SEED,
-                        MODEL=MODEL,
-                        ENV=ENV,
-                    ),
-                    range(n)
-                )
-            )
-        total_reward = np.sum(rewards)
-        end_time = time.time() - start_time
-        print(f'Workers = {w} - Evaluation total time = {end_time}')
+    # import os
+    # n_cores = os.cpu_count()
+    # print(f'Number of cores = {n_cores}')
+
+    # for w in range(1, int(n_cores/2)):
+    #     start_time = time.time()
+    #     with ProcessPoolExecutor(max_workers=w) as executor:
+    #         rewards = list(
+    #             executor.map(
+    #                 partial(
+    #                     run_single,
+    #                     random_solution=random_solution,
+    #                     TRIES=TRIES,
+    #                     SHOW_BEST=SHOW_BEST,
+    #                     SEED=SEED,
+    #                     MODEL=MODEL,
+    #                     ENV=ENV,
+    #                 ),
+    #                 range(n)
+    #             )
+    #         )
+    #     total_reward = np.sum(rewards)
+    #     end_time = time.time() - start_time
+    #     print(f'Workers = {w} - Evaluation total time = {end_time}')

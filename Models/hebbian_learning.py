@@ -27,36 +27,52 @@ class HebbianAbcdNN(StaticNN):
             a = b
         return weights
 
-    def apply_hebbian_rules(self, states):        
-        delta_weights = [layer.weight for layer in self.layers]
-        # print('Layers')
-        # for i, layer in enumerate(self.layers):
-        #     print(f'Layer {i}, {layer.weight.shape}')
-        # print('States')
-        # for i, state in enumerate(states):
-        #     print(f'State {i}, {state.shape}')
-        # print('Coeff')
-        # for i, coeff in enumerate(self.hebbian_coeff):
-        #     print(f'Coeff {i}, {coeff.shape}')
-        for i, layer in enumerate(self.layers):
-            # print('layer', i, layer.weight.shape)
-            # for j, row in enumerate(layer.weight):
-            #     # print('row', j, row.shape)
-            #     for k, column in enumerate(row):
-            #         # print('column', k, column.shape)
-            #         delta_weights[i][j, k] = self.hebbian_coeff[i][j, k, 0] * (
-            #             self.hebbian_coeff[i][j, k, 1] * states[i][k] * states[i+1][j] + 
-            #             self.hebbian_coeff[i][j, k, 2] * states[i][k] +
-            #             self.hebbian_coeff[i][j, k, 3] * states[i+1][j] +
-            #             self.hebbian_coeff[i][j, k, 4])
-                    
-            delta_weights[i] = self.hebbian_coeff[i][:, :, 0] * (
-                self.hebbian_coeff[i][:, :, 1] * (states[i+1] @ states[i].T) +
-                self.hebbian_coeff[i][:, :, 2] * states[i].repeat(1, states[i+1].shape[0]).T +
-                self.hebbian_coeff[i][:, :, 3] * states[i+1].repeat(1, states[i].shape[0]) +
-                self.hebbian_coeff[i][:, :, 4] 
-            )
-            self.layers[i].weight += delta_weights[i]
+    # def apply_hebbian_rules(self, states):        
+    #     delta_weights = [layer.weight for layer in self.layers]
+    #     for i, layer in enumerate(self.layers):
+    #         delta_weights[i] = self.hebbian_coeff[i][:, :, 0] * (
+    #             self.hebbian_coeff[i][:, :, 1] * (states[i+1] @ states[i].T) +
+    #             self.hebbian_coeff[i][:, :, 2] * states[i].repeat(1, states[i+1].shape[0]).T +
+    #             self.hebbian_coeff[i][:, :, 3] * states[i+1].repeat(1, states[i].shape[0]) +
+    #             self.hebbian_coeff[i][:, :, 4] 
+    #         )
+    #         self.layers[i].weight += delta_weights[i]
+
+
+    def apply_hebbian_rules(self, states):
+        with torch.no_grad():  # avoid autograd overhead
+            for i, layer in enumerate(self.layers):
+                h = self.hebbian_coeff[i]  # (out, in, 5)
+
+                # Pre/post synaptic activities
+                pre = states[i]        # (in, 1)
+                post = states[i + 1]   # (out, 1)
+
+                # Outer product (Hebbian term)
+                hebb = post @ pre.T    # (out, in)
+
+                # Unbind coefficients once (faster than repeated indexing)
+                A, B, C, D, E = h.unbind(dim=2)
+
+                # Broadcasting instead of repeat
+                delta = A * (
+                    B * hebb +
+                    C * pre.T +     # (1, in) broadcast
+                    D * post +      # (out, 1) broadcast
+                    E
+                )
+
+                layer.weight += delta
+
+
+def forward(self, x):
+    states = [x.unsqueeze(1)]
+    for layer in self.layers[:-1]:
+        x = layer(x)
+        x = self.activation(x)
+        states.append(x.unsqueeze(1))
+    y = self.layers[-1](x)
+    return y
 
     def forward(self, x):
         states = [x.unsqueeze(1)]
