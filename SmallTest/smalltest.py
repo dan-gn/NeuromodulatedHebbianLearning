@@ -21,6 +21,7 @@ parent = os.path.dirname(current)
 sys.path.append(parent)
 
 
+from Models.hebbian_learning import HebbianAbcdNN
 from Models.neuromodulated_hb import TimeBasedNeuromodulatedHebbianNN
 
 
@@ -32,8 +33,9 @@ ARGUMENTS
 
 # Experiment parameters
 SEED = 0
-MODEL = 'static'
+# MODEL = 'static'
 # MODEL = 'neuromodulated_hb'
+MODEL = 'abcd'
 
 TRIES = 1
 SHOW_BEST = False    # Store recorded file
@@ -138,6 +140,9 @@ def get_model(output_size, model_name, env, env_name, lambda_value, hidden_sizes
     if model_name == 'static':
         model = StaticNN(input_size=env.observation_space.shape[0], output_size=output_size, hidden_sizes=hidden_sizes)
         n_variables = model.get_n_weights()
+    elif model_name == 'abcd':
+        model =  HebbianAbcdNN(input_size=env.observation_space.shape[0], output_size=output_size, hidden_sizes=hidden_sizes, env_name=env_name)
+        n_variables = model.get_n_weights() * 5
     elif model_name == 'neuromodulated_hb':
         model =  TimeBasedNeuromodulatedHebbianNN(input_size=env.observation_space.shape[0], output_size=output_size, hidden_sizes=hidden_sizes, env_name=env_name, lambda_decay=lambda_value)
         n_variables = model.get_n_weights() * 5
@@ -272,7 +277,7 @@ if __name__ == "__main__":
     # Run the experiment
     # total_reward = objective_function(random_solution, tries = TRIES, show=SHOW_BEST, seed=SEED, model_name=MODEL, environment_name=ENV)
 
-    n = 10000
+    n = 10
 
     start_time = time.time()
     rewards = []
