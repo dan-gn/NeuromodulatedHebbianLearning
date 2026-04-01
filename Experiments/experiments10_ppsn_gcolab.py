@@ -283,18 +283,18 @@ class EvolutionaryAlgorithm:
                 self.best_individual.fitness_test = objective_function(self.best_individual.genotype, seed = 1996, model_name=self.model_name, environment_name=self.environment_name, tries=100, lambda_value=self.lambda_value) 
         return population
     
-    def initialise_individual(self, core_seed):
+    def run_initialise_individual(self, core_seed):
         self.set_seed(core_seed)
         individual = Individual(self.n_variables)
         individual.random_initialise()
-        individual = objective_function(individual.genotype, seed = self.seed, model_name=self.model_name, environment_name=self.environment_name, tries=self.tries, lambda_value=self.lambda_value)
+        individual.fitness = objective_function(individual.genotype, seed = self.seed, model_name=self.model_name, environment_name=self.environment_name, tries=self.tries, lambda_value=self.lambda_value)
         return individual
     
     def parallel_initialise_population(self):
         with ProcessPoolExecutor(max_workers=CORES) as executor:
-            population = list(executor.map(self.run_single_crossover_and_mutation, range(self.n_core_seed, self.n_core_seed + self.population_size)))
+            population = list(executor.map(self.run_initialise_individual, range(self.n_core_seed, self.n_core_seed + self.population_size)))
         self.n_core_seed += self.population_size
-        population = sorted(self.population, key=lambda x: x.fitness)
+        population = sorted(population, key=lambda x: x.fitness)
         if population[0].fitness < self.best_individual.fitness:
             self.best_individual.genotype = population[i].genotype
             self.best_individual.fitness = population[i].fitness
