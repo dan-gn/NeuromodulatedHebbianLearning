@@ -62,7 +62,7 @@ class HebbianAbcdNN(StaticNN):
                     E
                 )
 
-                self.layer[i].weight += delta
+                self.layers[i].weight += delta
 
     def forward(self, x):
         states = [x.unsqueeze(1)]

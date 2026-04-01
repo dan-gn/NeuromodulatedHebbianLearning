@@ -56,4 +56,4 @@ class TimeBasedNeuromodulatedHebbianNN(HebbianAbcdNN):
                     E
                 )
 
-                self.layer[i].weight += modulation_coeff * delta
+                self.layers[i].weight += modulation_coeff * delta
