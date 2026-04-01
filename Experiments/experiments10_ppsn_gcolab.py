@@ -282,6 +282,24 @@ class EvolutionaryAlgorithm:
                 self.best_individual.fitness = population[i].fitness
                 self.best_individual.fitness_test = objective_function(self.best_individual.genotype, seed = 1996, model_name=self.model_name, environment_name=self.environment_name, tries=100, lambda_value=self.lambda_value) 
         return population
+    
+    def initialise_individual(self, core_seed):
+        self.set_seed(core_seed)
+        individual = Individual(self.n_variables)
+        individual.random_initialise()
+        individual = objective_function(individual.genotype, seed = self.seed, model_name=self.model_name, environment_name=self.environment_name, tries=self.tries, lambda_value=self.lambda_value)
+        return individual
+    
+    def parallel_initialise_population(self):
+        with ProcessPoolExecutor(max_workers=CORES) as executor:
+            population = list(executor.map(self.run_single_crossover_and_mutation, range(self.n_core_seed, self.n_core_seed + self.population_size)))
+        self.n_core_seed += self.population_size
+        population = sorted(self.population, key=lambda x: x.fitness)
+        if population[0].fitness < self.best_individual.fitness:
+            self.best_individual.genotype = population[i].genotype
+            self.best_individual.fitness = population[i].fitness
+            self.best_individual.fitness_test = objective_function(self.best_individual.genotype, seed = 1996, model_name=self.model_name, environment_name=self.environment_name, tries=100, lambda_value=self.lambda_value) 
+        return population
 
     def roulette_wheel(self, p):
         r = np.random.uniform(0, 1) * sum(p)	
@@ -389,11 +407,11 @@ class EvolutionaryAlgorithm:
     # This function is for running the evolutionary algorithm in parallel. 
     # This function creates a couple of offsprings by performing parent seletction, crossover, mutation and evaluation. 
     # When running in parallel, each core starts its own random generator, so I included the input "core_seed", so each time the iteration ensure a different random process.
-    def run_single(self, core_seed):
+    def run_single_crossover_and_mutation(self, core_seed):
         self.set_seed(core_seed)
 
         # Parent Selection
-        # parents = self.parents[np.mod(core_seed, self.n_core_seeds)]
+        # parents = self.parents[np.mod(core_seed, self.n_core_seed)]
         parents = self.tournament_selection() 
 
         # Crossover
@@ -412,30 +430,11 @@ class EvolutionaryAlgorithm:
 
 
     def parallel_crossover_and_mutation(self):
-        # offspring_genotypes = []
-        # for p in parents:
-        #     genotype1, genotype2 = self.sbx(p)
-        #     offspring_genotypes.append(self.mutate(genotype1))
-        #     offspring_genotypes.append(self.mutate(genotype2))
-
-        # # Parallel evaluation of all genotypes
-        # with ProcessPoolExecutor() as executor:
-        #     fitnesses = list(executor.map(lambda g: objective_function(g, seed=self.seed, model_name=self.model_name, environment_name=self.environment_name, tries=self.tries, lambda_value=self.lambda_value), offspring_genotypes))
-
-        # # Build offspring individuals
-        # offspring = [
-        #     Individual(self.n_variables, genotype=g, fitness=f)
-        #     for g, f in zip(offspring_genotypes, fitnesses)
-        # ]
         self.probs = self.compute_parent_selection_prob()
         n_couples = int(self.population_size/2)
-        # self.parents = parents
         with ProcessPoolExecutor(max_workers=CORES) as executor:
-            # offspring = list(executor.map(lambda core_seed: self.run_single(parents, core_seed), range(self.n_core_seeds, self.n_core_seeds + len(parents))))
-            # offspring = list(executor.map(self.run_single, parents))
-            offspring = list(executor.map(self.run_single, range(self.n_core_seeds, self.n_core_seeds + n_couples)))
-        
-        self.n_core_seeds += n_couples
+            offspring = list(executor.map(self.run_single_crossover_and_mutation, range(self.n_core_seed, self.n_core_seed + n_couples)))
+        self.n_core_seed += n_couples
         offspring = np.array(offspring).flatten().tolist()
 
         return offspring
@@ -460,15 +459,15 @@ class EvolutionaryAlgorithm:
         self.record = np.zeros(self.max_iterations + 1)
         self.seed = seed
         self.stagnment_iterations = 0
-        self.population = self.initialise_population()
-        self.n_core_seeds = np.random.randint(1, 2**14)   # These is the seed for the cores in parallel computing
+        self.n_core_seed = np.random.randint(1, 2**14)   # These is the seed for the cores in parallel computing
+        self.population = self.parallel_initialise_population()
         for self.i in range(self.max_iterations):
             start_time = time.time()
             self.record[self.i] = self.best_individual.fitness
             if self.stagnment_iterations >= self.max_stagnment:
                 print('Restart population!')
                 self.stagnment_iterations = -1
-                self.population = self.initialise_population()
+                self.population = self.parallel_initialise_population()
                 self.population = sorted(self.population, key=lambda x: x.fitness)
                 self.population[-1].genotype = self.best_individual.genotype
                 self.population[-1].fitness = self.best_individual.fitness
