@@ -77,10 +77,10 @@ def run_single(i):
         if env == 'Acrobot-v1':
             threshold = 750
             total_reward = len(record) - np.searchsorted(record[::-1], threshold, side='right')
-        if env == 'CartPole-v1':
+        elif env == 'CartPole-v1':
             threshold = 1000
             total_reward = len(record) - np.searchsorted(record[::-1], threshold, side='right')
-        if env == 'MountainCar-v0':
+        elif env == 'MountainCar-v0':
             threshold = -5000
             total_reward = len(record) - np.searchsorted(record[::-1], threshold, side='right')
         else:
