@@ -67,6 +67,7 @@ MODELS = []
 MODELS.append('abcd')
 MODELS.append('neuromodulated_hb')
 MODELS.append('static')
+MODELS.append('static_double')
 
 # Environment options
 ENV_NUMBER = 0
@@ -130,11 +131,13 @@ def set_model_and_environment_parameters(env, model):
         STOP_CONDITION = -200 * TRIES
     elif env == 'Acrobot-v1':
         MAX_EPISODE_STEPS = 500
-        STOP_CONDITION = 100 * TRIES
+        STOP_CONDITION = 75 * TRIES
 
     # Neural Network parameters
     if model == 'static':
         HIDDEN_SIZES = [64, 32]
+    if model == 'static_double':
+        HIDDEN_SIZES = [128, 64]
     elif model == 'abcd' or model == 'neuromodulated_hb':
         HIDDEN_SIZES = [64, 32]
     return MAX_EPISODE_STEPS, STOP_CONDITION, HIDDEN_SIZES
@@ -157,7 +160,7 @@ def compute_action(env_name, action):
 
 # Get the model and the number of variables
 def get_model(output_size, model_name, env, env_name, lambda_value):
-    if model_name == 'static':
+    if model_name == 'static' or model_name == 'static_double':
         model = StaticNN(input_size=env.observation_space.shape[0], output_size=output_size, hidden_sizes=HIDDEN_SIZES)
         n_variables = model.get_n_weights()
     elif model_name == 'abcd':
@@ -196,7 +199,7 @@ def objective_function(x, model_name = MODEL, environment_name = ENV, tries = TR
     model, n_variables = get_model(output_size, model_name, env, environment_name, lambda_value)
     # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     # model.to(device)
-    if model_name == 'static':
+    if model_name == 'static' or model_name == 'static_double':
         model.update_weights(torch.Tensor(x))
     elif model_name == 'abcd' or model_name == 'neuromodulated_hb':
         model.update_weights(torch.rand(n_variables))
@@ -487,7 +490,7 @@ class EvolutionaryAlgorithm:
         return self.best_individual.genotype, self.best_individual.fitness
 
 
-lambda_exp = [x/2 for x in range(0, 11)]
+lambda_exp = [x/2 for x in range(0, 12)]
 # lambda_exp = [x/2 for x in range(0, 1)]
 lambdas = [10**(-x) for x in lambda_exp]
 
@@ -503,7 +506,7 @@ MAIN FUNCTION
 """
 if __name__ == "__main__":
 
-    MAX_EPISODE_STEPS, STOP_CONDITION, HIDDEN_SIZES = set_model_and_environment_parameters(ENV, MODEL)
+    # MAX_EPISODE_STEPS, STOP_CONDITION, HIDDEN_SIZES = set_model_and_environment_parameters(ENV, MODEL)
 
     for i, lambd in enumerate(lambdas):
         for seed in range(initial_iteration, last_iteration):
@@ -513,9 +516,13 @@ if __name__ == "__main__":
                 MODEL = 'abcd'
             elif lambda_exp[i] == 10/2:
                 MODEL = 'static'
+            elif lambda_exp[i] == 11/2:
+                MODEL = 'static_double'
             else:
                 MODEL = 'neuromodulated_hb'
 
+            MAX_EPISODE_STEPS, STOP_CONDITION, HIDDEN_SIZES = set_model_and_environment_parameters(ENV, MODEL)
+                
             SEED = seed
 
             if SEED is not None:
