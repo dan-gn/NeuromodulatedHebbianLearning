@@ -76,13 +76,13 @@ def run_single(i):
         record = x['record']
         if env == 'Acrobot-v1':
             threshold = 750
-            total_reward = len(record) - np.searchsorted(record[::-1], threshold, side='right')
         elif env == 'CartPole-v1':
             threshold = -5000
-            total_reward = len(record) - np.searchsorted(record[::-1], threshold, side='right')
         elif env == 'MountainCar-v0':
             threshold = 1100
-            total_reward = len(record) - np.searchsorted(record[::-1], threshold, side='right')
+        elif env == 'LunarLander-v3':
+            threshold = -2000
+        total_reward = len(record) - np.searchsorted(record[::-1], threshold, side='right')
         if record[-1] > threshold:
             total_reward = None
         df.loc[i, 'testing'] = total_reward
