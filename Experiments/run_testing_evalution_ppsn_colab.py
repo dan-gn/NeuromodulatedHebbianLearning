@@ -14,7 +14,7 @@ from concurrent.futures import ProcessPoolExecutor
 
 SEED = 1996
 eval_tries = 1000
-CORES = 40
+CORES = 47
 
 MODELS = []
 MODELS.append('abcd')
@@ -36,7 +36,7 @@ def set_seed(seed):
 
 
 # Read the results dataframe
-log_folder = f'../drive/MyDrive/PPSN26/Experiments/Results/test_ppsn_feb/'
+log_folder = f'../drive/MyDrive/PPSN26/Experiments/Results/test_ppsn_march/'
 df = pd.concat([pd.read_csv(f'{log_folder}/experiments_log_colab_exp{colab_file}.csv') for colab_file in range(1, 4)], ignore_index=True)
 
 new_file = log_folder + f'ppsn_testing_results.csv'
@@ -72,7 +72,9 @@ def run_single(i):
         lambda_value = row['lambda_decay']
         exp_seed = row['seed']
         max_episode_steps, _, _ = set_model_and_environment_parameters(env, model)
-        total_reward = objective_function(best_solution, tries = eval_tries, show=False, seed=SEED, model_name=model, environment_name=env, max_episode_steps=max_episode_steps, lambda_value=lambda_value)
+        # total_reward = objective_function(best_solution, tries = eval_tries, show=False, seed=SEED, model_name=model, environment_name=env, max_episode_steps=max_episode_steps, lambda_value=lambda_value)
+        total_reward = row['record']
+        print(type(total_reward))
         df.loc[i, 'testing'] = total_reward
         print(f'{i}: {env} - {model} -  {exp_seed} - {total_reward}')
     return total_reward
