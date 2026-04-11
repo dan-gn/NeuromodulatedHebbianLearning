@@ -83,8 +83,8 @@ def run_single(i):
         elif env == 'MountainCar-v0':
             threshold = 1100
             total_reward = len(record) - np.searchsorted(record[::-1], threshold, side='right')
-        else:
-            total_reward = 0
+        if record[-1] > threshold:
+            total_reward = None
         df.loc[i, 'testing'] = total_reward
         print(f'{i}: {env} - {model} -  {exp_seed} - {total_reward}')
     return total_reward
