@@ -37,9 +37,9 @@ def set_seed(seed):
 
 # Read the results dataframe
 log_folder = f'../drive/MyDrive/PPSN26/Experiments/Results/test_ppsn_march/'
-df = pd.concat([pd.read_csv(f'{log_folder}/experiments_log_colab_exp{colab_file}_it_fix.csv') for colab_file in range(1, 4)], ignore_index=True)
+df = pd.concat([pd.read_csv(f'{log_folder}/experiments_log_colab_exp{colab_file}.csv') for colab_file in range(1, 4)], ignore_index=True)
 
-new_file = log_folder + f'ppsn_testing_results.csv'
+new_file = log_folder + f'ppsn_testing_results_it_fix.csv'
 
 
 # Filter by environment
