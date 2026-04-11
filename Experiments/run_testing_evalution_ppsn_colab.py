@@ -81,7 +81,7 @@ def run_single(i):
             threshold = -5000
             total_reward = len(record) - np.searchsorted(record[::-1], threshold, side='right')
         elif env == 'MountainCar-v0':
-            threshold = 1000
+            threshold = 1100
             total_reward = len(record) - np.searchsorted(record[::-1], threshold, side='right')
         else:
             total_reward = 0
