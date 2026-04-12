@@ -25,8 +25,8 @@ ARGUMENTS
 """
 
 SEED = 1996
-eval_tries = 2
-CORES = 7
+eval_tries = 1000
+CORES = 47
 
 MODELS = []
 MODELS.append('abcd')
@@ -40,10 +40,10 @@ ENVIRONMENTS.append('CartPole-v1')
 ENVIRONMENTS.append('Acrobot-v1')
 
 # Read the results dataframe
-# log_folder = f'../drive/MyDrive/PPSN26/Experiments/Results/test_ppsn_march/'
-log_folder = f'Experiments/Results/test_ppsn_march/'
+log_folder = f'../drive/MyDrive/PPSN26/Experiments/Results/test_ppsn_march/'
+# log_folder = f'Experiments/Results/test_ppsn_march/'
 
-new_file = log_folder + f'ppsn_testing_results_testingggg.csv'
+new_file = log_folder + f'ppsn_testing_results_final.csv'
 
 
 """ 
