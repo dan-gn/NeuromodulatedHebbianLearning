@@ -425,9 +425,9 @@ class EvolutionaryAlgorithm:
         mutated_g1 = self.mutate(genotype1)
         
         # Evaluation
-        fitness_g1 = objective_function(mutated_g1, seed = self.seed, model_name=self.model_name, environment_name=self.environment_name, tries=self.tries, lambda_value=self.lambda_value)
+        fitness_g1 = objective_function(mutated_g1, env_initial_seed = self.env_initial_seed, model_name=self.model_name, environment_name=self.environment_name, tries=self.tries, lambda_value=self.lambda_value)
         mutated_g2 = self.mutate(genotype2)
-        fitness_g2 = objective_function(mutated_g2, seed = self.seed, model_name=self.model_name, environment_name=self.environment_name, tries=self.tries, lambda_value=self.lambda_value)
+        fitness_g2 = objective_function(mutated_g2, env_initial_seed = self.env_initial_seed, model_name=self.model_name, environment_name=self.environment_name, tries=self.tries, lambda_value=self.lambda_value)
         offspring1 = Individual(self.n_variables, genotype=mutated_g1, fitness=fitness_g1)
         offspring2 = Individual(self.n_variables, genotype=mutated_g2, fitness=fitness_g2)
         return [offspring1, offspring2]
@@ -513,8 +513,8 @@ if __name__ == "__main__":
     for i, lambd in enumerate(lambdas):
         for seed in range(initial_iteration, last_iteration):
 
-            if lambda_exp[i] != 11/2:
-                continue
+            # if lambda_exp[i] != 11/2:
+            #     continue
 
             if lambda_exp[i] == 9/2:
                 MODEL = 'abcd'
@@ -563,7 +563,7 @@ if __name__ == "__main__":
             print("Best score:", best_score)
 
             # Show best solution
-            total_reward = objective_function(best_solution, tries = EVAL_TRIES, show=SHOW_BEST, seed=1996, model_name=MODEL, environment_name=ENV)
+            total_reward = objective_function(best_solution, tries = EVAL_TRIES, show=SHOW_BEST, env_initial_seed=1996, model_name=MODEL, environment_name=ENV)
             # total_reward = objective_function(best_solution, tries = EVAL_TRIES, show=SHOW_BEST, seed=0, model_name=MODEL, environment_name=ENV)
             print(f'Evaluation total reward {total_reward}')
 
