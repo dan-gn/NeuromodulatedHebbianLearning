@@ -138,6 +138,7 @@ def set_model_and_environment_parameters(env, model):
         HIDDEN_SIZES = [64, 32]
     if model == 'static_double':
         HIDDEN_SIZES = [128, 64]
+        HIDDEN_SIZES = [150, 75]
     elif model == 'abcd' or model == 'neuromodulated_hb':
         HIDDEN_SIZES = [64, 32]
     return MAX_EPISODE_STEPS, STOP_CONDITION, HIDDEN_SIZES
@@ -511,6 +512,8 @@ if __name__ == "__main__":
     for i, lambd in enumerate(lambdas):
         for seed in range(initial_iteration, last_iteration):
 
+            if lambda_exp[i] != 11/2:
+                continue
 
             if lambda_exp[i] == 9/2:
                 MODEL = 'abcd'
