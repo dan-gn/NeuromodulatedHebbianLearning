@@ -137,7 +137,6 @@ def set_model_and_environment_parameters(env, model):
     if model == 'static':
         HIDDEN_SIZES = [64, 32]
     if model == 'static_double':
-        HIDDEN_SIZES = [128, 64]
         HIDDEN_SIZES = [150, 75]
     elif model == 'abcd' or model == 'neuromodulated_hb':
         HIDDEN_SIZES = [64, 32]
