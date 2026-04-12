@@ -52,6 +52,7 @@ ARGUMENTS
 """
 # Experiment parameters
 SEED = None
+ENV_INITIAL_SEED = 0
 READ_DATA = False   # Read data from input_filename
 STORE_DATA = True   # Store data on output_filename
 
@@ -187,7 +188,7 @@ def get_output_size(env):
 OBJECTIVE FUNCTION
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 """
-def objective_function(x, model_name = MODEL, environment_name = ENV, tries = TRIES, show=False, seed = None, max_episode_steps = MAX_EPISODE_STEPS, lambda_value=LAMBDA_DECAY):
+def objective_function(x, model_name = MODEL, environment_name = ENV, tries = TRIES, show=False, env_initial_seed = None, max_episode_steps = MAX_EPISODE_STEPS, lambda_value=LAMBDA_DECAY):
     max_episode_steps, STOP_CONDITION, HIDDEN_SIZES = set_model_and_environment_parameters(environment_name, model_name)
     if show:
         tmp_env = gym.make(environment_name, render_mode="rgb_array", max_episode_steps=max_episode_steps)
@@ -210,8 +211,8 @@ def objective_function(x, model_name = MODEL, environment_name = ENV, tries = TR
         for i in range(tries):
             if model_name == 'abcd' or model_name == 'neuromodulated_hb':
                 model.update_weights(torch.rand(n_variables))
-            if seed is not None:
-                observation, info = env.reset(seed=seed+i)
+            if env_initial_seed is not None:
+                observation, info = env.reset(seed=env_initial_seed+i)
             else:
                 observation, info = env.reset()
             episode_over = False
@@ -279,18 +280,18 @@ class EvolutionaryAlgorithm:
         population = [Individual(self.n_variables) for _ in range(self.population_size)]
         for i, member in enumerate(population):
             population[i].random_initialise()
-            population[i].fitness = objective_function(member.genotype, seed = self.seed, model_name=self.model_name, environment_name=self.environment_name, tries=self.tries, lambda_value=self.lambda_value)
+            population[i].fitness = objective_function(member.genotype, env_initial_seed=self.env_initial_seed, model_name=self.model_name, environment_name=self.environment_name, tries=self.tries, lambda_value=self.lambda_value)
             if population[i].fitness < self.best_individual.fitness:
                 self.best_individual.genotype = population[i].genotype
                 self.best_individual.fitness = population[i].fitness
-                self.best_individual.fitness_test = objective_function(self.best_individual.genotype, seed = 1996, model_name=self.model_name, environment_name=self.environment_name, tries=100, lambda_value=self.lambda_value) 
+                self.best_individual.fitness_test = objective_function(self.best_individual.genotype, env_initial_seed = 1996, model_name=self.model_name, environment_name=self.environment_name, tries=100, lambda_value=self.lambda_value) 
         return population
     
     def run_initialise_individual(self, core_seed):
         self.set_seed(core_seed)
         individual = Individual(self.n_variables)
         individual.random_initialise()
-        individual.fitness = objective_function(individual.genotype, seed = self.seed, model_name=self.model_name, environment_name=self.environment_name, tries=self.tries, lambda_value=self.lambda_value)
+        individual.fitness = objective_function(individual.genotype, env_initial_seed = self.env_initial_seed, model_name=self.model_name, environment_name=self.environment_name, tries=self.tries, lambda_value=self.lambda_value)
         return individual
     
     def parallel_initialise_population(self):
@@ -301,7 +302,7 @@ class EvolutionaryAlgorithm:
         if population[0].fitness < self.best_individual.fitness:
             self.best_individual.genotype = population[i].genotype
             self.best_individual.fitness = population[i].fitness
-            self.best_individual.fitness_test = objective_function(self.best_individual.genotype, seed = 1996, model_name=self.model_name, environment_name=self.environment_name, tries=100, lambda_value=self.lambda_value) 
+            self.best_individual.fitness_test = objective_function(self.best_individual.genotype, env_initial_seed=1996, model_name=self.model_name, environment_name=self.environment_name, tries=100, lambda_value=self.lambda_value) 
         return population
 
     def roulette_wheel(self, p):
@@ -368,7 +369,7 @@ class EvolutionaryAlgorithm:
         if offspring[0].fitness < self.best_individual.fitness:
             self.best_individual.genotype = offspring[0].genotype
             self.best_individual.fitness = offspring[0].fitness
-            self.best_individual.fitness_test = objective_function(self.best_individual.genotype, seed = 1996, model_name=self.model_name, environment_name=self.environment_name, tries=100, lambda_value=self.lambda_value) 
+            self.best_individual.fitness_test = objective_function(self.best_individual.genotype, env_initial_seed = 1996, model_name=self.model_name, environment_name=self.environment_name, tries=100, lambda_value=self.lambda_value) 
             self.stagnment_iterations = -1
         self.stagnment_iterations += 1
 
@@ -393,10 +394,10 @@ class EvolutionaryAlgorithm:
         for p in parents:
             genotype1, genotype2 = self.sbx(p)
             mutated_g1 = self.mutate(genotype1)
-            fitness_g1 = objective_function(mutated_g1, seed = self.seed, model_name=self.model_name, environment_name=self.environment_name, tries=self.tries, lambda_value=self.lambda_value)
+            fitness_g1 = objective_function(mutated_g1, env_initial_seed = self.env_initial_seed, model_name=self.model_name, environment_name=self.environment_name, tries=self.tries, lambda_value=self.lambda_value)
             offspring.append(Individual(self.n_variables, genotype=mutated_g1, fitness=fitness_g1))
             mutated_g2 = self.mutate(genotype2)
-            fitness_g2 = objective_function(mutated_g2, seed = self.seed, model_name=self.model_name, environment_name=self.environment_name, tries=self.tries, lambda_value=self.lambda_value)
+            fitness_g2 = objective_function(mutated_g2, env_initial_seed = self.env_initial_seed, model_name=self.model_name, environment_name=self.environment_name, tries=self.tries, lambda_value=self.lambda_value)
             offspring.append(Individual(self.n_variables, genotype=mutated_g2, fitness=fitness_g2))
         return offspring
     
@@ -454,13 +455,14 @@ class EvolutionaryAlgorithm:
             # print(f'Parallel time = {time.time() - start_time}')
         self.elitism(offspring)
 
-    def run(self, stop_criteria, seed):
+    def run(self, stop_criteria, seed, env_initial_seed):
         self.goal_achieved = False
         self.goal_achieved_it = None
         self.goal_achieved_individual = None
         self.goal_achieved_fitness = None
         self.record = np.zeros(self.max_iterations + 1)
         self.seed = seed
+        self.env_initial_seed = env_initial_seed
         self.stagnment_iterations = 0
         self.n_core_seed = np.random.randint(1, 2**14)   # These is the seed for the cores in parallel computing
         self.population = self.parallel_initialise_population()
@@ -553,7 +555,7 @@ if __name__ == "__main__":
                 best_score = data['best_score']
             else:
                 # Run optimization
-                best_solution, best_score = optimizer.run(STOP_CONDITION, SEED)
+                best_solution, best_score = optimizer.run(STOP_CONDITION, SEED, ENV_INITIAL_SEED)
 
             execution_time = time.time() - start_time
             
