@@ -24,7 +24,8 @@ ARGUMENTS
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 """
 
-SEED = 1996
+SEED = 2026
+
 eval_tries = 1000
 CORES = 47
 
@@ -127,7 +128,7 @@ def run_single(i, df):
         lambda_value = row['lambda_decay']
         exp_seed = row['seed']
         max_episode_steps, _, _ = set_model_and_environment_parameters(env, model)
-        total_reward = objective_function(best_solution, tries = eval_tries, show=False, seed=SEED, model_name=model, environment_name=env, max_episode_steps=max_episode_steps, lambda_value=lambda_value)
+        total_reward = objective_function(best_solution, tries = eval_tries, show=False, env_initial_seed=SEED, model_name=model, environment_name=env, max_episode_steps=max_episode_steps, lambda_value=lambda_value)
         df.loc[i, 'testing'] = total_reward
         print(f'{i}: {env} - {model} -  {exp_seed} - {total_reward}')
     return total_reward
