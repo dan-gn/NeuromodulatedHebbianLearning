@@ -71,7 +71,7 @@ MODELS.append('static')
 MODELS.append('static_double')
 
 # Environment options
-ENV_NUMBER = 0
+ENV_NUMBER = 2
 ENVIRONMENTS = []
 ENVIRONMENTS.append('MountainCar-v0')
 ENVIRONMENTS.append('LunarLander-v3')
@@ -90,14 +90,14 @@ def set_optimiser_iteration_number(env):
     elif env == 'MountainCar-v0':
         n_iterations = 500
     elif env == 'LunarLander-v3':
-        n_iterations = 1000
+        n_iterations = 2000
     elif env == 'Acrobot-v1':
         n_iterations = 100
     else:
         raise ValueError('Environment not found.')
     return n_iterations
         
-POPULATION_SIZE = 100
+POPULATION_SIZE = 500
 ITERATIONS = set_optimiser_iteration_number(ENVIRONMENTS[ENV_NUMBER])
 
 EVALUATIONS = POPULATION_SIZE * ITERATIONS
@@ -571,11 +571,11 @@ if __name__ == "__main__":
             # Store experiment data
             if STORE_DATA and not READ_DATA:
                 timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-                # output_filename = f'Experiments/Results/test_ppsn_feb/exp7_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}_lambda_{lambda_exp[i]}.pkl'
-                output_filename = f'../drive/MyDrive/PPSN26/Experiments/Results/test_ppsn_march/exp7_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}_lambda_{lambda_exp[i]}.pkl'
+                output_filename = f'Experiments/Results/test_ppsn_april/exp10_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}_lambda_{lambda_exp[i]}.pkl'
+                # output_filename = f'../drive/MyDrive/PPSN26/Experiments/Results/test_ppsn_april/exp10_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}_lambda_{lambda_exp[i]}.pkl'
                 
-                # log_file = f'Experiments/Results/test_ppsn_feb/experiments_log_100pop.csv'
-                log_file = f'../drive/MyDrive/PPSN26/Experiments/Results/test_ppsn_march/experiments_log_colab_exp{colab_file}.csv'
+                log_file = f'Experiments/Results/test_ppsn_april/experiments_log_100pop.csv'
+                # log_file = f'../drive/MyDrive/PPSN26/Experiments/Results/test_ppsn_april/experiments_log_colab_exp{colab_file}.csv'
                 new_line = {
                     'filename' : output_filename,
                     'algorithm' : 'EA',

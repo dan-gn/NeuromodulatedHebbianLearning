@@ -126,11 +126,12 @@ def run_single(i, df):
         model = row['model']
         env = row['environment']
         lambda_value = row['lambda_decay']
+        lambda_exp = row['lambda_exp']
         exp_seed = row['seed']
         max_episode_steps, _, _ = set_model_and_environment_parameters(env, model)
         total_reward = objective_function(best_solution, tries = eval_tries, show=False, env_initial_seed=SEED, model_name=model, environment_name=env, max_episode_steps=max_episode_steps, lambda_value=lambda_value)
         df.loc[i, 'testing'] = total_reward
-        print(f'{i}: {env} - {model} -  {exp_seed} - {total_reward}')
+        print(f'{i}: {env} - {model} - {lambda_exp} - {exp_seed} - {total_reward}')
     return total_reward
 
 
