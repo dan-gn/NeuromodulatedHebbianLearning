@@ -4,7 +4,7 @@ Import required libraries and functions
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 """
 # Libraries
-import cupy as np
+import numpy as np
 import torch 
 import torch.nn as nn
 import torch.nn.functional as F
@@ -571,11 +571,11 @@ if __name__ == "__main__":
             # Store experiment data
             if STORE_DATA and not READ_DATA:
                 timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-                output_filename = f'Experiments/Results/test_ppsn_april/exp10_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}_lambda_{lambda_exp[i]}.pkl'
-                # output_filename = f'../drive/MyDrive/PPSN26/Experiments/Results/test_ppsn_april/exp10_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}_lambda_{lambda_exp[i]}.pkl'
+                # output_filename = f'Experiments/Results/test_ppsn_april/exp10_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}_lambda_{lambda_exp[i]}.pkl'
+                output_filename = f'../drive/MyDrive/PPSN26/Experiments/Results/test_ppsn_april/exp10_output_ea_{ENV}_{MODEL}_seed-{seed}_time-{timestamp}_lambda_{lambda_exp[i]}.pkl'
                 
-                log_file = f'Experiments/Results/test_ppsn_april/experiments_log_100pop.csv'
-                # log_file = f'../drive/MyDrive/PPSN26/Experiments/Results/test_ppsn_april/experiments_log_colab_exp{colab_file}.csv'
+                # log_file = f'Experiments/Results/test_ppsn_april/experiments_log_100pop.csv'
+                log_file = f'../drive/MyDrive/PPSN26/Experiments/Results/test_ppsn_april/experiments_log_colab_exp{colab_file}.csv'
                 new_line = {
                     'filename' : output_filename,
                     'algorithm' : 'EA',
