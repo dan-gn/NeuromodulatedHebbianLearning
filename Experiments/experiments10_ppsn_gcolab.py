@@ -4,7 +4,7 @@ Import required libraries and functions
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 """
 # Libraries
-import numpy as np
+import cupy as np
 import torch 
 import torch.nn as nn
 import torch.nn.functional as F
@@ -71,7 +71,7 @@ MODELS.append('static')
 MODELS.append('static_double')
 
 # Environment options
-ENV_NUMBER = 2
+ENV_NUMBER = 1
 ENVIRONMENTS = []
 ENVIRONMENTS.append('MountainCar-v0')
 ENVIRONMENTS.append('LunarLander-v3')
