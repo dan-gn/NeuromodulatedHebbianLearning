@@ -16,6 +16,7 @@ import numpy as np
 import random
 
 from concurrent.futures import ProcessPoolExecutor
+from itertools import repeat
 
 
 """ 
@@ -104,8 +105,6 @@ def filter_experiments(df):
     ]
     df = pd.concat(filtered_dfs)
 
-
-
     # Remove duplicates
     cols = ['model', 'environment', 'lambda_exp', 'seed']
     # df = df[~df.duplicated(subset=cols, keep='last')]
@@ -158,18 +157,15 @@ if __name__ == "__main__":
         print(f'Total number of rows of {env} = {(df['environment'] == env).sum()}')
 
     # Run the testings
-    # with ProcessPoolExecutor(max_workers=CORES) as executor:
-    #     testing = list(executor.map(run_single, range(len(df))))
-
-
-    # from concurrent.futures import ProcessPoolExecutor
-    from itertools import repeat
-
     with ProcessPoolExecutor(max_workers=CORES) as executor:
-        testing = list(executor.map(run_single, range(len(df)), repeat(df)))
+        df['testing'] = list(executor.map(run_single, range(len(df)), repeat(df)))
+
+
+    # Sort the dataframe
+    cols = ['model', 'environment', 'lambda_exp', 'seed']
+    df = df.sort_values(by=cols)
 
     # Store the new CSV
-    df['testing'] = testing
     df.to_csv(new_file)
 
 
