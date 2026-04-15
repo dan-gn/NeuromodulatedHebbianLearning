@@ -41,7 +41,7 @@ ENVIRONMENTS.append('CartPole-v1')
 ENVIRONMENTS.append('Acrobot-v1')
 
 # Read the results dataframe
-log_folder = f'../drive/MyDrive/PPSN26/Experiments/Results/test_ppsn_march/'
+log_folder = f'../drive/MyDrive/PPSN26/Experiments/Results/test_ppsn_april/'
 # log_folder = f'Experiments/Results/test_ppsn_march/'
 
 new_file = log_folder + f'ppsn_testing_results_final.csv'
@@ -108,7 +108,7 @@ def filter_experiments(df):
 
     # Remove duplicates
     cols = ['model', 'environment', 'lambda_exp', 'seed']
-    df = df[~df.duplicated(subset=cols, keep='last')]
+    # df = df[~df.duplicated(subset=cols, keep='last')]
 
     # Sort the dataframe
     df = df.sort_values(by=cols)
@@ -119,7 +119,8 @@ def filter_experiments(df):
 def run_single(i, df):
     set_seed(SEED)
     row = df.iloc[i]
-    filename = log_folder + row['filename'].split('/')[-1]
+    # filename = log_folder + row['filename'].split('/')[-1]
+    filename = row['filename']
     with open(filename, 'rb') as f:
         x = pickle.load(f)
         best_solution = x['best_solution']

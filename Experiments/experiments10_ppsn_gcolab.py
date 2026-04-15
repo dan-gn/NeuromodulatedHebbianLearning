@@ -160,15 +160,15 @@ def compute_action(env_name, action):
         return int(probs.argmax())
 
 # Get the model and the number of variables
-def get_model(output_size, model_name, env, env_name, lambda_value):
+def get_model(output_size, model_name, hidden_sizes, env, env_name, lambda_value):
     if model_name == 'static' or model_name == 'static_double':
-        model = StaticNN(input_size=env.observation_space.shape[0], output_size=output_size, hidden_sizes=HIDDEN_SIZES)
+        model = StaticNN(input_size=env.observation_space.shape[0], output_size=output_size, hidden_sizes=hidden_sizes)
         n_variables = model.get_n_weights()
     elif model_name == 'abcd':
-        model =  HebbianAbcdNN(input_size=env.observation_space.shape[0], output_size=output_size, hidden_sizes=HIDDEN_SIZES, env_name=env_name)
+        model =  HebbianAbcdNN(input_size=env.observation_space.shape[0], output_size=output_size, hidden_sizes=hidden_sizes, env_name=env_name)
         n_variables = model.get_n_weights() * 5
     elif model_name == 'neuromodulated_hb':
-        model =  TimeBasedNeuromodulatedHebbianNN(input_size=env.observation_space.shape[0], output_size=output_size, hidden_sizes=HIDDEN_SIZES, env_name=env_name, lambda_decay=lambda_value)
+        model =  TimeBasedNeuromodulatedHebbianNN(input_size=env.observation_space.shape[0], output_size=output_size, hidden_sizes=hidden_sizes, env_name=env_name, lambda_decay=lambda_value)
         n_variables = model.get_n_weights() * 5
     else:
         raise ValueError('Model not found.')
@@ -189,7 +189,7 @@ OBJECTIVE FUNCTION
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 """
 def objective_function(x, model_name = MODEL, environment_name = ENV, tries = TRIES, show=False, env_initial_seed = None, max_episode_steps = MAX_EPISODE_STEPS, lambda_value=LAMBDA_DECAY):
-    max_episode_steps, STOP_CONDITION, HIDDEN_SIZES = set_model_and_environment_parameters(environment_name, model_name)
+    max_episode_steps, STOP_CONDITION, hidden_sizes = set_model_and_environment_parameters(environment_name, model_name)
     if show:
         tmp_env = gym.make(environment_name, render_mode="rgb_array", max_episode_steps=max_episode_steps)
         env = gym.wrappers.RecordVideo(env=tmp_env, name_prefix="test-video", video_folder='Experiments/Results/test_july/')
@@ -197,7 +197,7 @@ def objective_function(x, model_name = MODEL, environment_name = ENV, tries = TR
     else:
         env = gym.make(environment_name, max_episode_steps=max_episode_steps)
     output_size = get_output_size(environment_name)
-    model, n_variables = get_model(output_size, model_name, env, environment_name, lambda_value)
+    model, n_variables = get_model(output_size, model_name, hidden_sizes, env, environment_name, lambda_value)
     # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     # model.to(device)
     if model_name == 'static' or model_name == 'static_double':
